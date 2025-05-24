@@ -4,12 +4,13 @@
     "license": "GPL-2.0-or-later",
     "autoload": {
         "psr-4": {
-            "VektorInc\\FullsiteInstaller\\": "src/"
+            "VektorInc\\FullSiteInstaller\\": "src/"
         }
     },
     "authors": [
         {
-            "name": "Vektor,Inc."
+            "name": "Vektor,Inc.",
+            "email": "info@vektor-inc.co.jp"
         }
     ],
     "require": {}

@@ -5,14 +5,14 @@
  * @package vektor-inc/full-site-installer
  * @license GPL-2.0+
  *
- * @version 0.0.1
+ * @version 0.0.2
  */
 
 namespace VektorInc\FullSiteInstaller;
 
 class FullSiteInstaller {
 
-	public static $version = '0.0.1';
+	public static $version = '0.0.2';
 
     /**
      * Initialize the Full Site Installer plugin.
