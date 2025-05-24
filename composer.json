@@ -1,0 +1,16 @@
+{
+    "name": "vektor-inc/fullsite-installer",
+    "description": "Vektor FullSite Installer",
+    "license": "GPL-2.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "VektorInc\\FullsiteInstaller\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Vektor,Inc."
+        }
+    ],
+    "require": {}
+}
