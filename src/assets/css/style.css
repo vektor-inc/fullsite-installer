@@ -1,0 +1,393 @@
+:root {
+    --vk-color-border-gray: #ddd;
+    --vk-font-size-xs:11px;
+    --vk-gap:1.5rem;
+}
+.text-danger {
+	color: #c00;
+}
+/*-------------------------------------------*/
+/* body
+/*-------------------------------------------*/
+body.settings_page_vk-fullsite-installer {
+    background-color: #FFF;
+    @media (min-width: 961px) {       
+        & #wpcontent{
+            padding-left:2.75rem;
+            padding-right:2.75rem;
+        }      
+    }
+}
+@media (min-width: 961px) {
+body.settings_page_vk-fullsite-installer {
+    & #wpcontent{
+        padding-left:2.75rem;
+        padding-right:2.75rem;
+    }
+}
+}
+
+/*-------------------------------------------*/
+/* アラート対応
+/*-------------------------------------------*/
+#wpbody-content{
+    & .notice,  div.error, div.updated {
+        margin:5px 0 15px; 
+    }
+}
+
+/*-------------------------------------------*/
+/* vkfsi_search-form
+/*-------------------------------------------*/
+.vkfsi_search-form{
+    background-color: #f7f7f7;
+    border: 1px solid var(--vk-color-border-gray);
+    padding: clamp(1rem, 2vw, 2rem);
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    & h3{
+        margin-top: 0;
+    }
+    & .button{
+        display: block;
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 1em;
+        max-width: 800px;
+        font-size: 1rem;
+        letter-spacing: .5em;
+    }
+}
+.vkfsi_search-content{
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--vk-gap);
+    & .vkfsi_search-item {
+        flex-basis: calc(33.33% - var(--vk-gap));
+
+        @media (max-width: 768px) {
+            flex-basis: 100%;
+        }
+
+        & .vkfsi_input-wrap{
+            display: flex;
+            flex-wrap: wrap;
+            gap:0.75rem 1rem;
+            margin-block-start: 1em;
+            margin-block-end: 1em;
+            & input[type=text]{
+                width: 100%;
+                max-width: 100%;
+            }
+            & li{
+                margin-bottom: 0;
+                width: min(100%, 180px);
+                & label{
+                    cursor: pointer;
+                    display: flex;
+                    line-height: 1.3;
+                    & input{
+                        margin: 0 .7rem 0 0;
+                        padding: 0;
+                    }
+                }
+                @media (max-width: 782px) {
+                    width: 100%;
+                }
+            }
+        }
+    }
+}
+
+.vkfsi_loading {
+    /* ローディング画面の縦横幅を画面いっぱいになるように指定 */
+    width: 100vw;
+    height: 100vh;
+    /* ローディング画面の表示位置を固定 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 10000;
+    /* ローディング画面を0.5秒かけて非表示にする */
+    transition: all 0.5s linear;
+    /* 背景色を透過にする */
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.vkfsi_loading-text {
+    color: #FFF;
+    font-size: 30px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    text-align: center;
+}
+  
+.vkfsi_spinner {
+    display: block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 4px solid #FFF;
+    border-left-color: #000000; 
+    /* アニメーションを1秒かけて実行 */
+    animation: spinner-rotation 1s linear infinite;
+}
+  
+/* アニメーションの設定 */
+@keyframes spinner-rotation {
+    0% {
+      transform: rotate(0);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+}
+
+.vkfsi_error {
+    color: #f00;
+    font-weight: bold;
+    margin-top: 0.5em;
+}
+/*-------------------------------------------*/
+/* vkfsi_logo
+/*-------------------------------------------*/
+.vkfsi_admin-page {
+    padding-top: 1em;
+    & .vkfsi_logo img{
+        max-width: 240px;
+        margin: 0 auto;
+    } 
+    & .page_title{
+        text-align: left;
+        font-size: 16px;
+        line-height: 140%;
+        margin: 5px 0 30px;
+    }
+}
+
+/*-------------------------------------------*/
+/* vkfsi_sites
+/*-------------------------------------------*/
+.vkfsi_sites{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    gap: 1.5rem 2.75rem;
+    align-items: stretch;
+    justify-content:start;
+    box-sizing:border-box;
+    & .vkfsi_site a:focus{
+        box-shadow: unset;
+        outline: unset;
+    }
+    & .vkfsi_site .vkfsi_thumbnail {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3; /* 4:3の比率を指定 */
+        object-fit: cover; /* 画像をクリップして比率に収める */
+        transition: opacity 0.2s ease-in-out; /* スムーズな遷移のためのトランジション */
+		a &{
+            border: 1px solid var(--vk-color-border-gray);
+            display: block;
+        }
+    }
+    & .vkfsi_site .vkfsi_thumbnail:hover {
+        opacity: 0.4;
+    }
+    & .vkfsi_site form{
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        height: 100%; /* 各サイトの高さを統一 */
+    }
+    & .vkfsi_description{
+		margin-top:1em;
+        margin-bottom: 1rem;
+    }
+    & .vkfsi_table{
+        display: flex;
+        flex-direction: row;
+        margin: 3px 0;
+        font-size: var(--vk-font-size-xs);
+    }
+    & .vkfsi_table dt{
+		min-width:100px;
+    }
+	.vkfsi_table_label {
+		display: block;
+        min-width:100px;
+        border:1px solid var(--vk-color-border-gray);
+        padding-left: .25rem;
+        padding-right: .25rem;
+        text-align: center;
+	}
+    & .vkfsi_table dd{
+        margin-left: 10px;
+        margin-bottom:unset;
+    }
+
+    & .vkfsi_price + .vkfsi_price{
+        margin-top: 0.25rem;
+    }
+  
+    & h3{
+        font-size: 1rem;
+        margin-top: 0;
+        margin-top:1rem;
+        margin-bottom: 0.5rem;
+    }
+
+	.vkfsi_price-outer {
+		white-space: nowrap;
+		min-height:3.5em;
+		.vkfsi_price_del {
+			text-decoration: line-through;
+			margin-right:8px;
+		}
+		.vkfsi_price_passport {
+			display: block;
+		}
+		.vkfsi_price_tax {
+			font-size: 12px;
+			margin-left:3px;
+		}
+		.vkfsi_price_discount {
+			font-weight: bold;
+			font-size:14px;
+			color: #c00;
+		}
+		.vkfsi_price_number {
+			font-size: 21px;;
+		}
+	}
+
+    /* ボタン周り */
+    & .vkfsi_btn-outer{
+        margin-top: auto; /* ボタンを最下部に配置 */
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start; 
+        min-height: 205px;
+    }
+    & .vkfsi_btn-inner {
+        width: 100%; /* 必要なら全幅に広げる */
+    }
+	& .vkfsi_site-demo-url {
+		margin-top: 0;
+	}
+    & .vkfsi_site-demo-url + p.submit{/* インポートボタン */
+        margin-bottom: 1em;    
+    }
+    & .vkfsi_license-form + label{
+        margin-top: 0.5rem;
+        display: inline-block;
+    }
+    & .vkfsi_license-form{
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    & .vkfsi_license-form input[type="password"] {
+        flex-grow: 1;
+    }
+    & .vkfsi_site-demo-url a,
+    & .submit button{
+        width: 100%;
+        text-align: center;
+        
+    }
+    & p.submit{ /*打ち消し*/
+        margin-top:0;
+        margin-bottom: 0;
+        padding: 0;
+    }
+    & .vkfsi_button-with-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4em;
+        position: relative;
+      }
+      
+    & .vkfsi_button-text {
+        flex-grow: 1;
+        text-align: center;
+      }
+      
+    & .vkfsi_button-with-icon svg {
+        width: auto;
+        height: 1.25em;
+        vertical-align: middle;
+        flex-shrink: 0;
+      }
+}
+
+/*-------------------------------------------*/
+/* パスワードの目のマーク dashicons
+/*-------------------------------------------*/
+.vkfsi_admin-page .password-input-wrapper .text{
+    display: none;
+}
+.vkfsi_admin-page .password-input-wrapper .dashicons-visibility ~ .text-visible {
+    display: inline-block;
+}
+.vkfsi_admin-page .password-input-wrapper .dashicons-hidden ~ .text-no-visible {
+    display: inline-block;
+}
+/*-------------------------------------------*/
+/* パスワードの入力 password input
+/*-------------------------------------------*/
+.wp-pwd #vkfsi_admin_password{
+    margin-bottom: 1px;
+}
+#vkfsi_pass-strength-result {
+	background-color: #f0f0f1;
+	border: 1px solid #dcdcde;
+	color: #1d2327;
+	margin: -1px 1px 5px;
+	padding: 3px 5px;
+	text-align: center;
+	width: 25em;
+	box-sizing: border-box;
+	opacity: 0;
+}
+
+#vkfsi_pass-strength-result.short {
+	background-color: #ffabaf;
+	border-color: #e65054;
+	opacity: 1;
+}
+
+#vkfsi_pass-strength-result.bad {
+	background-color: #facfd2;
+	border-color: #f86368;
+	opacity: 1;
+}
+
+#vkfsi_pass-strength-result.good {
+	background-color: #f5e6ab;
+	border-color: #f0c33c;
+	opacity: 1;
+}
+
+#vkfsi_pass-strength-result.strong {
+	background-color: #b8e6bf;
+	border-color: #68de7c;
+	opacity: 1;
+}
+.password-input-wrapper:has(#vkfsi_pass-strength-result.short) #vkfsi_admin_password,
+.password-input-wrapper:has(#vkfsi_pass-strength-result.bad) #vkfsi_admin_password{
+    border-color: #e65054;
+}
+.password-input-wrapper:has(#vkfsi_pass-strength-result.good) #vkfsi_admin_password{
+    border-color: #f0c33c;
+}
+.password-input-wrapper:has(#vkfsi_pass-strength-result.strong) #vkfsi_admin_password{
+    border-color: #68de7c;
+}
