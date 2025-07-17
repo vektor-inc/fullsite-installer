@@ -37,6 +37,11 @@ use VektorInc\FullSiteInstaller\FullSiteInstallerLicenseChecker;
  */
 class FullSiteInstaller {
 
+	public static $version = '0.0.5';
+
+	/**
+	 * ライセンスの種類を定義
+	 */
 	public static $license_type_name_array = [
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE => '無料',
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT => 'Vektor Passport',
