@@ -2,7 +2,7 @@
 /**
  * Full Site Installer
  *
- * @package vektor-inc/full-site-installer
+ * @package vektor-inc/fullsite-installer
  * @license GPL-2.0+
  *
  * @version 0.0.5
