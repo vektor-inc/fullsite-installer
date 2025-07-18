@@ -5,7 +5,7 @@
  * @package vektor-inc/fullsite-installer
  * @license GPL-2.0+
  *
- * @version 0.0.5
+ * @version 0.0.6
  */
 namespace VektorInc\FullSiteInstaller;
 
@@ -37,10 +37,8 @@ use VektorInc\FullSiteInstaller\FullSiteInstallerLicenseChecker;
  */
 class FullSiteInstaller {
 
-	public static $version = '0.0.5';
-
 	/**
-	 * ライセンスの種類を定義
+	 * ライセンスの種類
 	 */
 	public static $license_type_name_array = [
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE => '無料',
@@ -54,24 +52,6 @@ class FullSiteInstaller {
 		'wp_users',
 		'wp_usermeta',
 	);
-
-	/**
-	 * Initialize the plugin.
-	 */
-	public static function init() {
-		// 管理画面にメニューを追加
-		add_action( 'admin_menu', array( __CLASS__, 'addAdminMenu' ) );
-	}
-
-	/**
-	 * Add the admin menu for the plugin.
-	 *
-	 * This function adds a new options page to the WordPress admin menu
-	 * where users can access the VK FullSite Installer settings.
-	 */
-	public static function addAdminMenu() {
-		add_options_page( 'VK FullSite Installer 設定', 'VK FullSite Installer', 'manage_options', 'vk-fullsite-installer', array( __CLASS__, 'execute' ) );
-	}
 
 	/**
 	 * Execute the plugin.
