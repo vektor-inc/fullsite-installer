@@ -17,10 +17,10 @@ echo '</style>';
 		$( 'li.current' ).hide();
 	});
 </script>
+
 <!-- インポートフォーム -->
 <div class="wrap vkfsi_admin-page">
 	<h1 class="vkfsi_logo"><?php echo $titleImage; ?></h1>
-	<h2>インポート完了</h2>
 </div>
 
 <!-- インポート完了メッセージを表示 -->

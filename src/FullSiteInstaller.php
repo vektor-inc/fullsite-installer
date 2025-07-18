@@ -5,7 +5,7 @@
  * @package vektor-inc/fullsite-installer
  * @license GPL-2.0+
  *
- * @version 0.0.7
+ * @version 0.0.8
  */
 namespace VektorInc\FullSiteInstaller;
 
