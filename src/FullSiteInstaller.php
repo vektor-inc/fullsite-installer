@@ -5,7 +5,7 @@
  * @package vektor-inc/fullsite-installer
  * @license GPL-2.0+
  *
- * @version 0.0.9
+ * @version 0.1.0
  */
 namespace VektorInc\FullSiteInstaller;
 
@@ -388,7 +388,7 @@ class FullSiteInstaller {
 		wp_cache_flush();
 
 		// プラグインを有効化
-		$activate_plugins = array( 'vk-fullsite-installer' );
+		$activate_plugins = array( 'vk-fullsite-installer', 'vk-fullsite-installer-beta-tester' );
 		foreach ( $activate_plugins as $plugin ) {
 			activate_plugins( $plugin . '/' . $plugin . '.php' );
 		}
@@ -420,8 +420,12 @@ class FullSiteInstaller {
 		$api_url = SITES_COUNTER_API_URL . '?code=' . $site_code;
 		$response = wp_remote_get( $api_url );
 
+		// リダイレクト URL をフィルタリング
+		$url = admin_url( 'options-general.php?page=vk-fullsite-installer&imported=true' );
+		$url = apply_filters( 'vkfsi_redirect_url', $url );
+
 		// インポートが完了したら、リダイレクトして完了ページを表示
-		wp_redirect( admin_url( 'options-general.php?page=vk-fullsite-installer&imported=true' ) );
+		wp_redirect( $url );
 		exit;
 	}
 
