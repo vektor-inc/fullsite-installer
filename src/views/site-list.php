@@ -458,7 +458,7 @@ foreach ( $filtered_sites as $site ) {
         <a href="' . esc_url( $site[ 'demo_url' ] ) . '" target="_blank" class="button vkfsi_button-with-icon">
             <span class="vkfsi_button-text">デモサイトを見る</span>
             <svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
-                <use xlink:href="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/images/icon.svg#icon-external-link' ) . '"></use>
+                <use xlink:href="#icon-external-link"></use>
             </svg>
         </a>
     </p>';
@@ -470,7 +470,7 @@ foreach ( $filtered_sites as $site ) {
             <button type="submit" name="select_site" id="select_site" class="button button-primary vkfsi_button-with-icon">
                 <span class="vkfsi_button-text">このサイトをインポート</span>
                 <svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
-                    <use xlink:href="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/images/icon.svg#icon-import' ) . '"></use>
+                    <use xlink:href="#icon-import"></use>
                 </svg>
             </button>
         </p>';
@@ -482,7 +482,7 @@ foreach ( $filtered_sites as $site ) {
                 <button type="submit" name="select_site" id="select_site" class="button button-primary vkfsi_button-with-icon">
                     <span class="vkfsi_button-text">このサイトをインポート</span>
                     <svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
-                        <use xlink:href="' . esc_url( plugin_dir_url( __FILE__ ) . 'assets/images/icon.svg#icon-import' ) . '"></use>
+                        <use xlink:href="#icon-import"></use>
                     </svg>
                 </button>
             </p>';

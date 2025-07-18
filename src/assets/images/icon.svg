@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+
+    <!-- 外部リンクアイコン -->
+    <symbol id="icon-external-link" viewBox="0 0 18 18">
+        <g clip-path="url(#clip0_349_1073)">
+        <path d="M8.625 3H3.75C3.3375 3 3 3.3375 3 3.75V14.25C3 14.6625 3.3375 15 3.75 15H14.25C14.67 15 15 14.6625 15 14.25V9.75" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M8.25 9.75L15.8488 2.38649" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M11.8713 2.12131H16.114V6.36395" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </g>
+        <defs>
+        <clipPath id="clip0_349_1073">
+        <rect width="18" height="18" fill="currentColor"/>
+        </clipPath>
+        </defs>
+    </symbol>
+
+    <!-- インポートアイコン -->
+    <symbol id="icon-import" viewBox="0 0 18 18">
+        <path d="M17.1 9V15.4421C17.1 15.8589 16.6545 16.2 16.0875 16.2H1.91249C1.35562 16.2 0.899994 15.8589 0.899994 15.4421V9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M9 2L9 11" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M12 8.39996L9 11.4L6 8.39996" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </symbol>
+
+</svg>

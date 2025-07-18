@@ -54,6 +54,23 @@ class FullSiteInstaller {
 	);
 
 	/**
+	 * プラグインの初期化処理
+	 */
+	public static function init() {
+		add_action( 'admin_footer', array( __CLASS__, 'getSvgSprite' ) );
+	}
+
+	/**
+	 * SVGスプライトの取得
+	 */
+	public static function getSvgSprite() {
+		$path = __DIR__ . '/assets/images/icon.svg';
+		if ( file_exists( $path ) ) {
+			echo file_get_contents( $path );
+		}
+	}
+
+	/**
 	 * Execute the plugin.
 	 */
 	public static function execute() {

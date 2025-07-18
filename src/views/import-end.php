@@ -3,8 +3,6 @@
  * VK FullSite Installer インポート完了ページ
  */
 
-////////// 表示処理 //////////
-
 // スタイルシートの読み込み
 echo '<style>';
 echo file_get_contents( __DIR__ . '/../assets/css/style.css' );
