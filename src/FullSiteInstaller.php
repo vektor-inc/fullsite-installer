@@ -5,7 +5,7 @@
  * @package vektor-inc/fullsite-installer
  * @license GPL-2.0+
  *
- * @version 0.0.6
+ * @version 0.0.7
  */
 namespace VektorInc\FullSiteInstaller;
 
@@ -89,8 +89,11 @@ class FullSiteInstaller {
 		// パーマリンクの再設定
 		flush_rewrite_rules();
 
+		// タイトル画像
+		$titleImage = self::getSvgImageTag( __DIR__ . '/assets/images/admin.svg', 'VK FullSite Installer 設定' );
+
 		// 管理画面のインポートページを表示
-		require_once __DIR__ . '/views/import-end-page.php';
+		require_once __DIR__ . '/views/import-end.php';
 
 		// プラグインを無効化
 		$deactivate_plugins = array( 'vk-fullsite-installer', 'vk-fullsite-installer-beta-tester' );
