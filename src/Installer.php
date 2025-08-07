@@ -622,7 +622,8 @@ class Installer {
 	public static function displaySiteListPage() {
 
 		// API から sites.json を取得
-		$sites_json = file_get_contents( SITES_JSON_API_URL );
+		$response = wp_remote_get( SITES_JSON_API_URL );
+		$sites_json = wp_remote_retrieve_body( $response );
 
 		// JSON デコード
 		$sites = json_decode( $sites_json, true );
