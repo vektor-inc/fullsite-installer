@@ -79,22 +79,24 @@ class LicenseChecker {
 	 */
 	public function getData() {
 
-		// ライセンス認証 URL を生成
-		$api_url = $this->api_url;
-		if ( strpos( $api_url, '?' ) === false ) {
-			$api_url .= '?';
-		} else {
-			$api_url .= '&';
-		}
-		$api_url .= 'site_code=' . $this->site_code;
-		$api_url .= '&passport_license_key=' . $this->passport_license_key;
-		$api_url .= '&site_license_key=' . $this->site_license_key;
+		$api_url = add_query_arg(
+			[
+				'site_code'             => $this->site_code,
+				'passport_license_key'  => $this->passport_license_key,
+				'site_license_key'      => $this->site_license_key,
+			],
+			$this->api_url
+		);
 
-		// ライセンス認証 URL にアクセスして結果を取得
-		$client = new Client();
-		$response = $client->request( 'GET', $api_url );
-		$contents = $response->getBody()->getContents();
-		$json = json_decode( $contents, true );
+		$response = wp_remote_get( $api_url, [ 'timeout' => 15 ] );
+		if ( is_wp_error( $response ) ) { return null; }
+
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( $code < 200 || $code >= 300 ) { return null; }
+
+		$body = wp_remote_retrieve_body( $response );
+		$json = json_decode( $body, true );
+		if ( json_last_error() !== JSON_ERROR_NONE ) { return null; }
 
 		return $json;
 	}

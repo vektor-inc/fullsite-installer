@@ -1,5 +1,12 @@
 <?php
 
+////////// 事前処理 //////////
+
+// POST 配列のサニタイズ
+$s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-theme' ] ) : [];
+$s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-license-type' ] ) : [];
+$s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-author' ]  ) : [];
+
 ////////// 関数定義 //////////
 
 /**
@@ -21,8 +28,8 @@ function vkfsi_search_filter( $site ) {
 
 	// テーマ
 	if ( isset( $_POST[ 's-theme' ] ) ) {
-		$array = $_POST[ 's-theme' ];
-		if ( ! in_array( $site[ 'theme' ], $array ) ) {
+        global $s_theme;
+		if ( ! in_array( $site[ 'theme' ], $s_theme ) ) {
 			return false;
 		}
 	}
@@ -36,16 +43,16 @@ function vkfsi_search_filter( $site ) {
 
 	// ライセンス区分
 	if ( isset( $_POST[ 's-license-type' ] ) ) {
-		$array = $_POST[ 's-license-type' ];
-		if ( ! in_array( $site[ 'license_type' ], $array ) ) {
+        global $s_license_type;
+		if ( ! in_array( $site[ 'license_type' ], $s_license_type ) ) {
 			return false;
 		}
 	}
 
 	// Author
 	if ( isset( $_POST[ 's-author' ] ) ) {
-		$array = $_POST[ 's-author' ];
-		if ( ! in_array( $site[ 'author' ], $array ) ) {
+        global $s_author;
+		if ( ! in_array( $site[ 'author' ], $s_author ) ) {
 			return false;
 		}
 	}
@@ -78,8 +85,8 @@ function vkfsi_search_filter( $site ) {
  * @return array $price_data
  */
 function vkfst_get_display_price_data( $site ) {
-	$price_normal   = isset( $site['shop-item']['price'] ) ? $site['shop-item']['price'] : '';
-	$price_discount = isset( $site['shop-item']['price_discount'] ) ? $site['shop-item']['price_discount'] : '';
+	$price_normal   = isset( $site[ 'shop-item' ][ 'price' ] ) ? $site[ 'shop-item' ][ 'price' ] : '';
+	$price_discount = isset( $site[ 'shop-item' ][ 'price_discount' ] ) ? $site[ 'shop-item' ][ 'price_discount' ] : '';
 
 	$price_data = array(
 		'display_mode'   => '',
@@ -90,24 +97,24 @@ function vkfst_get_display_price_data( $site ) {
 
 	// 無料（ 0円入力のある場合は特別に0円になっている ）
 	if ( empty( $price_normal ) && empty( $price_discount ) && '0' !== $price_discount ) {
-		$price_data['display_mode'] = 'free';
+		$price_data[ 'display_mode' ] = 'free';
 	} elseif ( ! empty( $price_discount ) ) {
-		$price_data['display_mode']   = 'discount';
-		$price_data['price_deleted']  = number_format( vkfst_string_to_number( $price_normal ) );
-		$price_data['price_discount'] = number_format( vkfst_string_to_number( $price_discount ) );
+		$price_data[ 'display_mode' ]   = 'discount';
+		$price_data[ 'price_deleted' ]  = number_format( vkfst_string_to_number( $price_normal ) );
+		$price_data[ 'price_discount' ] = number_format( vkfst_string_to_number( $price_discount ) );
 	} elseif ( '0' === $price_discount ) {
-		$price_data['display_mode']   = 'discount_free';
+		$price_data[ 'display_mode' ]   = 'discount_free';
 		// 割引で 0 円にしているが通常価格が未記入の場合
-		if ( $price_normal ){
-			$price_data['price_deleted']  = number_format( vkfst_string_to_number( $price_normal ) );
+		if ( $price_normal ) {
+			$price_data[ 'price_deleted' ]  = number_format( vkfst_string_to_number( $price_normal ) );
 		}
-		$price_data['price_discount']  = number_format( vkfst_string_to_number( $price_discount ) );
+		$price_data[ 'price_discount' ]  = number_format( vkfst_string_to_number( $price_discount ) );
 	} elseif ( empty( $price_discount ) && ! empty( $price_normal ) ) {
-		$price_data['display_mode']   = 'normal';
-		$price_data['price_normal']  = number_format( vkfst_string_to_number( $price_normal ) );
+		$price_data[ 'display_mode' ]   = 'normal';
+		$price_data[ 'price_normal' ]  = number_format( vkfst_string_to_number( $price_normal ) );
 	} else {
-		$price_data['display_mode'] = 'normal';
-		$price_data['price_normal'] = number_format( vkfst_string_to_number( $price_normal ) );
+		$price_data[ 'display_mode' ] = 'normal';
+		$price_data[ 'price_normal' ] = number_format( vkfst_string_to_number( $price_normal ) );
 	}
 
 	return $price_data;
@@ -117,22 +124,22 @@ function vkfst_get_display_price_html( $price_data ) {
 	$price_html = '';
 
 	// 打ち消し価格
-	if ( ! empty( $price_data['price_deleted'] ) ){
-		$price_html .= '<span class="vkfsi_price_del">¥' . number_format( vkfst_string_to_number( $price_data['price_deleted'] ) ) . '円<span class="vkfsi_price_tax">(税込)</span></span>';
+	if ( ! empty( $price_data[ 'price_deleted' ] ) ){
+		$price_html .= '<span class="vkfsi_price_del">¥' . number_format( vkfst_string_to_number( $price_data[ 'price_deleted' ] ) ) . '円<span class="vkfsi_price_tax">(税込)</span></span>';
 	}
 
 	// 割引価格
-	if ( isset( $price_data['price_discount'] ) && '' !== $price_data['price_discount'] ){
-		$price_html .= '<span class="vkfsi_price vkfsi_price_discount">¥<span class="vkfsi_price_number">' . number_format( vkfst_string_to_number( $price_data['price_discount'] ) ) . '</span>円<span class="vkfsi_price_tax">(税込)</span></span>';
+	if ( isset( $price_data[ 'price_discount' ] ) && '' !== $price_data[ 'price_discount' ] ){
+		$price_html .= '<span class="vkfsi_price vkfsi_price_discount">¥<span class="vkfsi_price_number">' . number_format( vkfst_string_to_number( $price_data[ 'price_discount' ] ) ) . '</span>円<span class="vkfsi_price_tax">(税込)</span></span>';
 	}
 
 	// 通常価格
-	if ( isset( $price_data['price_normal'] ) && '' !== $price_data['price_normal'] ){
-		$price_html .= '<span class="vkfsi_price vkfsi_price_no_discount">¥<span class="vkfsi_price_number">' . number_format( vkfst_string_to_number(  $price_data['price_normal'] ) ) . '</span>円<span class="vkfsi_price_tax">(税込)</span></span>';
+	if ( isset( $price_data[ 'price_normal' ] ) && '' !== $price_data[ 'price_normal' ] ){
+		$price_html .= '<span class="vkfsi_price vkfsi_price_no_discount">¥<span class="vkfsi_price_number">' . number_format( vkfst_string_to_number(  $price_data[ 'price_normal' ] ) ) . '</span>円<span class="vkfsi_price_tax">(税込)</span></span>';
 	}
 
 	// 無料
-	if ( isset( $price_data['display_mode'] ) && 'free' === $price_data['display_mode'] ){
+	if ( isset( $price_data[ 'display_mode' ] ) && 'free' === $price_data[ 'display_mode' ] ){
 		$price_html .= '<span class="vkfsi_price vkfsi_price_no_discount">無料</span>';
 	}
 
@@ -185,6 +192,7 @@ $search_author_array = array_unique( $search_author_array );
 // 検索フォーム
 echo '<div class="vkfsi_search-form">';
 echo '<form method="post" action="">';
+wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce' );
 echo '<input type="hidden" name="s-search" value="on">';
 echo '<h3>サイト検索</h3>';
 echo '<div class="vkfsi_search-content">';
@@ -234,7 +242,7 @@ echo '<strong>テーマ</strong>';
 echo '<ul class="vkfsi_input-wrap">';
 foreach ( $search_theme_array as $theme ) {
     $checked = '';
-    if ( isset( $_POST[ 's-theme' ] ) && in_array( $theme, $_POST[ 's-theme' ] ) ) {
+    if ( in_array( $theme, $s_theme ) ) {
         $checked = 'checked';
     }
     echo '<li><label>';
@@ -271,7 +279,7 @@ echo '<ul class="vkfsi_input-wrap">';
 global $license_type_name_array;
 foreach ( self::$license_type_name_array as $license_type => $license_name ) {
     $checked = '';
-    if ( isset( $_POST[ 's-license-type' ] ) && in_array( $license_type, $_POST[ 's-license-type' ] ) ) {
+    if ( in_array( $license_type, $s_license_type ) ) {
         $checked = 'checked';
     }
     echo '<li><label>';
@@ -288,7 +296,7 @@ echo '<strong>Author</strong>';
 echo '<ul class="vkfsi_input-wrap">';
 foreach ( $search_author_array as $author ) {
     $checked = '';
-    if ( isset( $_POST[ 's-author' ] ) && in_array( $author, $_POST[ 's-author' ] ) ) {
+    if ( in_array( $author, $s_author ) ) {
         $checked = 'checked';
     }
     echo '<li><label>';
@@ -371,10 +379,11 @@ foreach ( $_POST as $key => $value ) {
 echo '<div class="vkfsi_sites">';
 foreach ( $filtered_sites as $site ) {
     // サイトデータの表示
-    echo '<div id="div-' . $site[ 'site_code' ] . '" class="vkfsi_site">';
+    echo '<div id="div-' . esc_attr( $site[ 'site_code' ] ) . '" class="vkfsi_site">';
 
     // フォーム
     echo '<form method="post" action="">';
+    wp_nonce_field( 'vkfsi_license_action', 'vkfsi_license_nonce' );
 
     // サイトコードとライセンスタイプ
     echo '<input type="hidden" name="vkfsi_code" value="' . esc_html( $site[ 'site_code' ] ) . '">';

@@ -59,6 +59,7 @@ echo '</style>';
 	<h1 class="vkfsi_logo"><?php echo $titleImage; ?></h1>
 	<h2>インポート設定</h2>
 	<form method="post" action="">
+		<?php wp_nonce_field( 'vkfsi_start_import', 'vkfsi_import_nonce' ); ?>
 		<input type="hidden" name="vkfsi_code" value="<?php echo esc_attr( $_POST[ 'vkfsi_code' ] ); ?>">
 		<input type="hidden" name="vkfsi_data_url" value="<?php echo esc_url( $_POST[ 'vkfsi_data_url' ] ); ?>">
 		<input type="hidden" name="vkfsi_license_key_vektor_passport" value="<?php echo esc_attr( $license_key_passport ); ?>">

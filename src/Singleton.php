@@ -14,8 +14,8 @@ trait Singleton {
 	 * コンストラクタ
 	 */
 	final protected function __construct() {
-		if ( isset( self::$instance[ get_called_class() ] ) ) {
-			throw new Exception( "You can't clone this instance." );
+		if ( isset( self::$instances[ get_called_class() ] ) ) {
+			throw new \Exception( "You can't clone this instance." );
 		}
 	}
 
@@ -28,8 +28,8 @@ trait Singleton {
         $subclass = static::class;
         if ( ! isset( self::$instances[ $subclass ] ) ) {
             self::$instances[ $subclass ] = new static();
-            if ( method_exists(self::$instances[$subclass], 'initialize') ) {
-                self::$instances[$subclass]->initialize();
+            if ( method_exists( self::$instances[ $subclass ], 'initialize' ) ) {
+                self::$instances[ $subclass ]->initialize();
             }
         }
         return self::$instances[ $subclass ];
@@ -41,6 +41,15 @@ trait Singleton {
 	 * @return void
 	 */
 	function __clone() {
-		throw new RuntimeException( "You can't clone this instance." );
+		throw new \RuntimeException( "You can't clone this instance." );
+	}
+
+	/**
+	 * 単一インスタンスを保証するためのシリアライズの防止
+	 *
+	 * @return void
+	 */
+	final public function __wakeup(): void {
+		throw new \RuntimeException( "You can't unserialize this instance." );
 	}
 }

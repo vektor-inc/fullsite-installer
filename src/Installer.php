@@ -143,6 +143,13 @@ class Installer {
 
 		//// インポート処理前の入力値チェック ////
 
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do this action.', 'default' ) );
+		}
+		if ( ! isset( $_POST[ 'vkfsi_import_nonce' ] ) || ! wp_verify_nonce( $_POST[ 'vkfsi_import_nonce' ], 'vkfsi_start_import' ) ) {
+			wp_die( esc_html__( 'Invalid request.', 'default' ) );
+		}
+
 		// データ URL のチェック
 		if ( ! isset( $_POST[ 'vkfsi_data_url' ] ) ) {
 			echo '<div class="notice notice-error is-dismissible"><p>インポートするサイトを選択してください。</p></div>';
@@ -417,7 +424,7 @@ class Installer {
 
 		// サイトデータのカウントアップ
 		$site_code = $_POST[ 'vkfsi_code' ];
-		$api_url = SITES_COUNTER_API_URL . '?code=' . $site_code;
+		$api_url = add_query_arg( 'code', $site_code, apply_filters( 'vkfsi_sites_counter_api_url', SITES_COUNTER_API_URL ) );
 		$response = wp_remote_get( $api_url );
 
 		// リダイレクト URL をフィルタリング
@@ -622,7 +629,8 @@ class Installer {
 	public static function displaySiteListPage() {
 
 		// API から sites.json を取得
-		$response = wp_remote_get( SITES_JSON_API_URL );
+		$sites_api = apply_filters( 'vkfsi_sites_api_url', SITES_JSON_API_URL );
+		$response = wp_remote_get( $sites_api );
 		$sites_json = wp_remote_retrieve_body( $response );
 
 		// JSON デコード
@@ -657,6 +665,14 @@ class Installer {
 
 		// 「保存」ボタンが押されていれば、ライセンス認証を行う
 		if ( isset( $_POST[ 'save_license_key_vektor_passport' ] ) || isset( $_POST[ 'save_license_key_site' ] ) ) {
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Sorry, you are not allowed to do this action.', 'default' ) );
+			}
+			if ( ! isset( $_POST[ 'vkfsi_license_nonce' ] ) || ! wp_verify_nonce( $_POST[ 'vkfsi_license_nonce' ], 'vkfsi_license_action' ) ) {
+				wp_die( esc_html__( 'Invalid request.', 'default' ) );
+			}
+
 			// サイトコードの取得
 			$site_code = sanitize_text_field( $_POST[ 'vkfsi_code' ] );
 
@@ -673,8 +689,7 @@ class Installer {
 			}
 
 			// ライセンス認証 URL
-			$license_check_url = LICENSE_CHECK_API_URL;
-			$license_check_url = apply_filters( 'vkfsi_license_check_url', $license_check_url );
+			$license_check_url = apply_filters( 'vkfsi_license_check_url', LICENSE_CHECK_API_URL );
 
 			// 認証クラスの初期化
 			$license_checker = LicenseChecker::getInstance();
