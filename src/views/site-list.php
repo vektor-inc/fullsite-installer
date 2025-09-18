@@ -2,7 +2,11 @@
 
 ////////// 事前処理 //////////
 
-// POST 配列のサニタイズ
+// 検索用 POST 配列のサニタイズ
+global $s_theme;
+global $s_license_type;
+global $s_author;
+
 $s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-theme' ] ) : [];
 $s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-license-type' ] ) : [];
 $s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-author' ]  ) : [];
