@@ -79,6 +79,7 @@ class LicenseChecker {
 	 */
 	public function getData() {
 
+		$this->api_url = apply_filters( 'vkfsibt_license_check_url', $this->api_url );
 		$api_url = add_query_arg(
 			[
 				'site_code'             => $this->site_code,
