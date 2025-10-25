@@ -246,7 +246,6 @@ class Installer {
 				if ( in_array( $table_without_prefix, self::$skip_table_array ) ) {
 					continue;
 				}
-				$table = str_replace( 'wp_', $wpdb->prefix, $table );
 				$wpdb->query( 'DROP TABLE IF EXISTS `' . $table . '`' );
 			}
 
