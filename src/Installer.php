@@ -184,6 +184,9 @@ class Installer {
 		// WordPress のサイト名を取得
 		$site_name = get_bloginfo( 'name' );
 
+		// 管理者メールアドレスを取得
+		$admin_email = get_option( 'admin_email' );
+
 		// 各入力値の取得
 		$data_url = esc_url_raw( $_POST[ 'vkfsi_data_url' ] );
 		$content_user_id = intval( $_POST[ 'content_user_id' ] );
@@ -342,6 +345,10 @@ class Installer {
 			$wpdb->update( $wpdb->options, [ 'option_value' => $site_url ], [ 'option_name' => 'siteurl' ], [ '%s' ], '%s' );
 			$wpdb->update( $wpdb->options, [ 'option_value' => $home_url ], [ 'option_name' => 'home' ], [ '%s' ], '%s' );
 		}
+
+		// wp_options テーブルの admin_email の値を更新
+		$wpdb->update( $wpdb->options, [ 'option_value' => $admin_email ], [ 'option_name' => 'admin_email' ], [ '%s' ], '%s' );
+		$wpdb->update( $wpdb->options, [ 'option_value' => '' ], [ 'option_name' => 'new_admin_email' ], [ '%s' ] );
 
 		// テーブルの一覧を取得
 		$tables = $wpdb->get_results( 'SHOW TABLES', ARRAY_N );
