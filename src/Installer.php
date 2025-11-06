@@ -227,7 +227,11 @@ class Installer {
 			$response = wp_remote_get( $split_data_url, array( 'timeout' => 300 ) );
 
 			// ファイルが存在しない場合もあるのでそれに対処
+			$status_code_404 = 404;
 			if ( is_wp_error( $response ) ) {
+				unset( $response );
+				continue;
+			} elseif ( wp_remote_retrieve_response_code( $response ) == $status_code_404 ) {
 				unset( $response );
 				continue;
 			}
