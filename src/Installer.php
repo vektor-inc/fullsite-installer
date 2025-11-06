@@ -184,9 +184,6 @@ class Installer {
 		// WordPress のサイト名を取得
 		$site_name = get_bloginfo( 'name' );
 
-		// 管理者メールアドレスを取得
-		$admin_email = get_option( 'admin_email' );
-
 		// 各入力値の取得
 		$data_url = esc_url_raw( $_POST[ 'vkfsi_data_url' ] );
 		$content_user_id = intval( $_POST[ 'content_user_id' ] );
@@ -218,6 +215,37 @@ class Installer {
 			return;
 		}
 		unset( $zip );
+
+		// 分割するディレクトリのリスト
+		$split_dirs = array( 'uploads', 'plugins', 'themes' );
+		foreach ( $split_dirs as $split_dir ) {
+			// 分割されたデータの URL
+			$split_data_url = str_replace( '.zip', '-' . $split_dir . '.zip', $data_url );
+
+			// ZIP ファイルのダウンロード
+			$split_zip_file = $import_dir . '/' . basename( $split_data_url );
+			$response = wp_remote_get( $split_data_url, array( 'timeout' => 300 ) );
+
+			// ファイルが存在しない場合もあるのでそれに対処
+			if ( is_wp_error( $response ) ) {
+				unset( $response );
+				continue;
+			}
+			file_put_contents( $split_zip_file, wp_remote_retrieve_body( $response ) );
+			unset( $response );
+
+			// ZIP ファイルの解凍
+			$split_zip = new \ZipArchive();
+			if ( $split_zip->open( $split_zip_file ) === TRUE ) {
+				$split_zip->extractTo( $import_dir );
+				$split_zip->close();
+				unlink( $split_zip_file ); // ZIP ファイルを削除
+			} else {
+				echo '<div class="notice notice-error is-dismissible"><p>Zip ファイルの解凍に失敗しました。</p></div>';
+				return;
+			}
+			unset( $split_zip );
+		}
 
 		// Table Prefix の取得
 		$prefix_file = $import_dir . '/prefix.txt';
@@ -345,10 +373,6 @@ class Installer {
 			$wpdb->update( $wpdb->options, [ 'option_value' => $site_url ], [ 'option_name' => 'siteurl' ], [ '%s' ], '%s' );
 			$wpdb->update( $wpdb->options, [ 'option_value' => $home_url ], [ 'option_name' => 'home' ], [ '%s' ], '%s' );
 		}
-
-		// wp_options テーブルの admin_email の値を更新
-		$wpdb->update( $wpdb->options, [ 'option_value' => $admin_email ], [ 'option_name' => 'admin_email' ], [ '%s' ], '%s' );
-		$wpdb->update( $wpdb->options, [ 'option_value' => '' ], [ 'option_name' => 'new_admin_email' ], [ '%s' ] );
 
 		// テーブルの一覧を取得
 		$tables = $wpdb->get_results( 'SHOW TABLES', ARRAY_N );
