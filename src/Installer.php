@@ -169,6 +169,16 @@ class Installer {
 			$validate_flag = false;
 		}
 
+		if ( ! isset( $_POST[ 'confirm_import_database' ] ) || $_POST[ 'confirm_import_database' ] !== 'yes' ) {
+			echo '<div class="notice notice-error is-dismissible"><p>データベースの更新に関する確認のチェックボックスをオンにしてください。</p></div>';
+			$validate_flag = false;
+		}
+
+		if ( ! isset( $_POST[ 'confirm_import_maintenance' ] ) || $_POST[ 'confirm_import_maintenance' ] !== 'yes' ) {
+			echo '<div class="notice notice-error is-dismissible"><p>メンテナンスモードに関する確認のチェックボックスをオンにしてください。</p></div>';
+			$validate_flag = false;
+		}
+
 		// 入力エラーがあれば処理終了
 		if ( ! $validate_flag ) {
 			return;

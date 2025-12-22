@@ -44,7 +44,9 @@ echo '</style>';
 	jQuery( function( $ ) {
 		$( '.vkfsi_start-import' ).on( 'click', function() {
 			// 入力値のチェック
-			if ( ! $( '#vkfsi_confirm_passport' ).prop( 'checked' ) ) {
+			if ( ! $( '#vkfsi_confirm_passport' ).prop( 'checked' ) ||
+				 ! $( '#vkfsi_confirm_database' ).prop( 'checked' ) ||
+				 ! $( '#vkfsi_confirm_maintenance' ).prop( 'checked' ) ) {
 				alert( 'チェックボックスをオンにしてください。' );
 				return false;
 			}
@@ -72,7 +74,19 @@ echo '</style>';
 		<p>
 			<label>
 				<input name="confirm_import" type="checkbox" id="vkfsi_confirm_passport" value="yes">
-				<span class="text-danger">このセットアップは新規サイト構築専用です。インポートすると現在のサイトのデータは完全に消失します。</span>
+				<span class="text-danger"><?php echo esc_html( __( 'このセットアップは新規サイト構築専用です。インポートすると現在のサイトのデータは完全に消失します。', 'fullsite-installer' ) ); ?></span>
+			</label>
+		</p>
+		<p>
+			<label>
+				<input name="confirm_import_database" type="checkbox" id="vkfsi_confirm_database" value="yes">
+				<?php echo esc_html( __( '「データベースの更新が必要です」と表示される場合があります。表示された場合は「WordPressデータベースを更新」をクリックして手続きを進めてください。', 'fullsite-installer' ) ); ?>
+			</label>
+		</p>
+		<p>
+			<label>
+				<input name="confirm_import_maintenance" type="checkbox" id="vkfsi_confirm_maintenance" value="yes">
+				<?php echo esc_html( __( 'インポートした後で「Briefly unavailable for scheduled maintenance. Check back in a minute.」と表示された場合はプラグインなどの自動更新が実行中です。しばらくしてから再度管理画面にアクセスしてください。', 'fullsite-installer' ) ); ?>
 			</label>
 		</p>
 		<?php submit_button( 'インポート開始', 'primary vkfsi_start-import', 'start_import' ); ?>
