@@ -464,6 +464,9 @@ class Installer {
 			// VK AB Testing のライセンスキーを保存
 			update_option( 'vk_ab_testing_license_key', $license_key_passport );
 
+			// Smaveksive のライセンスキーを保存
+			update_option( 'smaveksive-license-key', $license_key_passport );
+
 			// VK Blocks Pro のライセンスキーを保存
 			$options = get_option( 'vk_blocks_options' );
 			if ( ! is_array( $options ) ) {
