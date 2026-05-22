@@ -13,6 +13,16 @@ $s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', (a
 
 ////////// 関数定義 //////////
 
+// ソートキー
+$sort_key_array = [
+    'post_date.desc' => '公開日 降順',
+    'post_date.asc' => '公開日 昇順',
+    'post_modified.desc' => '更新日 降順',
+    'post_modified.asc' => '更新日 昇順',
+    'site_name.desc' => 'タイトル 降順',
+    'site_name.asc' => 'タイトル 昇順',
+];
+
 /**
  * サイト一覧の表示フィルタリング（検索条件の適用）
  * @param array $site サイト情報
@@ -324,6 +334,25 @@ echo '</div>';
 echo '</div>';
 echo '</div>'; // vkfsi_search-content
 
+// 検索フォーム - 表示順
+echo '<div class="vkfsi_search-item">';
+echo '<strong>表示順</strong>';
+echo '<ul class="vkfsi_input-wrap">';
+echo '<select name="s-sort" id="s-sort">';
+echo '<option value="">指定なし</option>';
+foreach ( $sort_key_array as $sort_key => $sort_name ) {
+    $selected = '';
+    if ( isset( $_POST[ 's-sort' ] ) && $sort_key == $_POST[ 's-sort' ] ) {
+        $selected = 'selected';
+    }
+    echo '<option value="' . esc_attr( $sort_key ) . '" ' . $selected . '>';
+    echo esc_html( $sort_name );
+    echo '</option>';
+}
+echo '</select>';
+echo '</ul>';
+echo '</div>';
+
 // 検索フォーム - 検索ボタン
 echo '<input type="submit" value="検索" class="button button-primary">';
 
@@ -361,6 +390,27 @@ if ( count( $filtered_sites ) == 0 ) {
     echo '<div class="notice notice-info is-dismissible"><p>該当するサイトが見つかりませんでした。</p></div>';
 } else {
     echo '<p>インストールするサイトを選択してください</p>';
+
+    // 表示順ソート
+    $sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( $_POST[ 's-sort' ] ) : '';
+    if ( $sort_value && isset( $sort_key_array[ $sort_value ] ) ) {
+        $sort_parts = explode( '.', $sort_value, 2 );
+        $sort_field = $sort_parts[0];
+        $sort_dir   = $sort_parts[1] ?? 'asc';
+        usort( $filtered_sites, function( $a, $b ) use ( $sort_field, $sort_dir ) {
+            $val_a = $a[ $sort_field ] ?? '';
+            $val_b = $b[ $sort_field ] ?? '';
+            // 日付フィールドは Unix タイムスタンプに変換して数値比較
+            if ( in_array( $sort_field, [ 'post_date', 'post_modified' ] ) ) {
+                $time_a = $val_a ? strtotime( $val_a ) : 0;
+                $time_b = $val_b ? strtotime( $val_b ) : 0;
+                $cmp    = $time_a <=> $time_b;
+            } else {
+                $cmp = strcmp( $val_a, $val_b );
+            }
+            return $sort_dir === 'desc' ? -$cmp : $cmp;
+        } );
+    }
 }
 
 // 検索条件用 hidden タグ
