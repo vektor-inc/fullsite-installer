@@ -400,7 +400,14 @@ if ( count( $filtered_sites ) == 0 ) {
         usort( $filtered_sites, function( $a, $b ) use ( $sort_field, $sort_dir ) {
             $val_a = $a[ $sort_field ] ?? '';
             $val_b = $b[ $sort_field ] ?? '';
-            $cmp   = strcmp( $val_a, $val_b );
+            // 日付フィールドは Unix タイムスタンプに変換して数値比較
+            if ( in_array( $sort_field, [ 'post_date', 'post_modified' ] ) ) {
+                $time_a = $val_a ? strtotime( $val_a ) : 0;
+                $time_b = $val_b ? strtotime( $val_b ) : 0;
+                $cmp    = $time_a <=> $time_b;
+            } else {
+                $cmp = strcmp( $val_a, $val_b );
+            }
             return $sort_dir === 'desc' ? -$cmp : $cmp;
         } );
     }
