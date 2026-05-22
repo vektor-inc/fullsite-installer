@@ -332,7 +332,6 @@ echo '<div class="vkfsi_input-wrap">';
 echo '<input type="text" name="s-keyword" value="' . $keyword . '">';
 echo '</div>';
 echo '</div>';
-echo '</div>'; // vkfsi_search-content
 
 // 検索フォーム - 表示順
 echo '<div class="vkfsi_search-item">';
@@ -352,6 +351,8 @@ foreach ( $sort_key_array as $sort_key => $sort_name ) {
 echo '</select>';
 echo '</ul>';
 echo '</div>';
+
+echo '</div>'; // vkfsi_search-content
 
 // 検索フォーム - 検索ボタン
 echo '<input type="submit" value="検索" class="button button-primary">';
