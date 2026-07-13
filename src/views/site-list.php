@@ -11,6 +11,16 @@ $s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', (arr
 $s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-license-type' ] ) : [];
 $s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-author' ]  ) : [];
 
+// 検索値：テーマタイプ
+if ( isset( $_POST[ 's-theme-type' ] ) ) {
+    $_POST[ 's-theme-type' ] = sanitize_text_field( $_POST[ 's-theme-type' ] );
+}
+
+// 検索値：業種
+if ( isset( $_POST[ 's-industry' ] ) ) {
+    $_POST[ 's-industry' ] = sanitize_text_field( $_POST[ 's-industry' ] );
+}
+
 ////////// 関数定義 //////////
 
 // ソートキー
