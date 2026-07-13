@@ -11,6 +11,16 @@ $s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', (arr
 $s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-license-type' ] ) : [];
 $s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-author' ]  ) : [];
 
+// 検索値：テーマタイプ
+if ( isset( $_POST[ 's-theme-type' ] ) ) {
+    $_POST[ 's-theme-type' ] = sanitize_text_field( $_POST[ 's-theme-type' ] );
+}
+
+// 検索値：業種
+if ( isset( $_POST[ 's-industry' ] ) ) {
+    $_POST[ 's-industry' ] = sanitize_text_field( $_POST[ 's-industry' ] );
+}
+
 ////////// 関数定義 //////////
 
 // ソートキー
@@ -67,6 +77,13 @@ function vkfsi_search_filter( $site ) {
 	if ( isset( $_POST[ 's-author' ] ) ) {
         global $s_author;
 		if ( ! in_array( $site[ 'author' ], $s_author ) ) {
+			return false;
+		}
+	}
+
+	// 業種
+	if ( isset( $_POST[ 's-industry' ] ) && ! empty( $_POST[ 's-industry' ] ) ) {
+		if ( ( $site[ 'industry' ] ?? '' ) != $_POST[ 's-industry' ] ) {
 			return false;
 		}
 	}
@@ -187,12 +204,16 @@ $search_theme_array = []; // テーマ名の配列
 $search_theme_type_array = []; // テーマタイプの配列
 $search_license_type_array = []; // ライセンス区分の配列
 $search_author_array = []; // Author の配列
+$search_industry_array = []; // 業種の配列
 foreach ( $sites as $site ) {
 	$search_theme_array[] = $site[ 'theme' ];
 	$search_theme_type_array[] = $site[ 'theme_type' ];
 	$search_language_array[] = $site[ 'language' ];
 	$search_license_type_array[] = $site[ 'license_type' ];
 	$search_author_array[] = $site[ 'author' ];
+    if ( isset( $site[ 'industry' ] ) && ! empty( $site[ 'industry' ] ) ) { 
+        $search_industry_array[] = $site[ 'industry' ];
+    }
 }
 
 // array_unique で重複を削除
@@ -201,7 +222,7 @@ $search_theme_type_array = array_unique( $search_theme_type_array );
 $search_language_array = array_unique( $search_language_array );
 $search_license_type_array = array_unique( $search_license_type_array );
 $search_author_array = array_unique( $search_author_array );
-
+$search_industry_array = array_unique( $search_industry_array );
 
 // 検索フォーム
 echo '<div class="vkfsi_search-form">';
@@ -274,6 +295,9 @@ echo '<ul class="vkfsi_input-wrap">';
 echo '<select name="s-theme-type" id="s-theme-type">';
 echo '<option value="">指定なし</option>';
 foreach ( $search_theme_type_array as $theme_type ) {
+    if ( empty( $theme_type ) ) {
+        continue;
+    }
     $selected = '';
     if ( isset( $_POST[ 's-theme-type' ] ) && $theme_type == $_POST[ 's-theme-type' ] ) {
         $selected = 'selected';
@@ -285,6 +309,30 @@ foreach ( $search_theme_type_array as $theme_type ) {
 echo '</select>';
 echo '</ul>';
 echo '</div>';
+
+// 検索フォーム - 業種
+if ( count( $search_industry_array ) > 0 ) {
+    echo '<div class="vkfsi_search-item">';
+    echo '<strong>業種</strong>';
+    echo '<ul class="vkfsi_input-wrap">';
+    echo '<select name="s-industry" id="s-industry">';
+    echo '<option value="">指定なし</option>';
+    foreach ( $search_industry_array as $industry ) {
+        if ( empty( $industry ) ) {
+            continue;
+        }
+            $selected = '';
+        if ( isset( $_POST[ 's-industry' ] ) && $industry == $_POST[ 's-industry' ] ) {
+            $selected = 'selected';
+        }
+        echo '<option value="' . esc_attr( $industry ) . '" ' . $selected . '>';
+        echo esc_html( $industry );
+        echo '</option>';
+    }
+    echo '</select>';
+    echo '</ul>';
+    echo '</div>';
+}
 
 // 検索フォーム - ライセンス区分
 echo '<div class="vkfsi_search-item">';
