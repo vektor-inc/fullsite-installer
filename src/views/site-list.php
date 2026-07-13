@@ -6,12 +6,10 @@
 global $s_theme;
 global $s_license_type;
 global $s_author;
-global $s_industry;
 
 $s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-theme' ] ) : [];
 $s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-license-type' ] ) : [];
 $s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-author' ]  ) : [];
-$s_industry = isset( $_POST[ 's-industry' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-industry' ] ) : [];
 
 ////////// 関数定義 //////////
 
@@ -75,7 +73,7 @@ function vkfsi_search_filter( $site ) {
 
 	// 業種
 	if ( isset( $_POST[ 's-industry' ] ) && ! empty( $_POST[ 's-industry' ] ) ) {
-		if ( $site[ 'industry' ] != $_POST[ 's-industry' ] ) {
+		if ( ( $site[ 'industry' ] ?? '' ) != $_POST[ 's-industry' ] ) {
 			return false;
 		}
 	}
