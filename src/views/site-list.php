@@ -72,7 +72,7 @@ function vkfsi_search_filter( $site ) {
 	}
 
 	// 業種
-	if ( isset( $_POST[ 's-industry' ] ) ) {
+	if ( isset( $_POST[ 's-industry' ] ) && ! empty( $_POST[ 's-industry' ] ) ) {
 		if ( $site[ 'industry' ] != $_POST[ 's-industry' ] ) {
 			return false;
 		}
@@ -285,6 +285,9 @@ echo '<ul class="vkfsi_input-wrap">';
 echo '<select name="s-theme-type" id="s-theme-type">';
 echo '<option value="">指定なし</option>';
 foreach ( $search_theme_type_array as $theme_type ) {
+    if ( empty( $theme_type ) ) {
+        continue;
+    }
     $selected = '';
     if ( isset( $_POST[ 's-theme-type' ] ) && $theme_type == $_POST[ 's-theme-type' ] ) {
         $selected = 'selected';
@@ -305,7 +308,10 @@ if ( count( $search_industry_array ) > 0 ) {
     echo '<select name="s-industry" id="s-industry">';
     echo '<option value="">指定なし</option>';
     foreach ( $search_industry_array as $industry ) {
-        $selected = '';
+        if ( empty( $industry ) ) {
+            continue;
+        }
+            $selected = '';
         if ( isset( $_POST[ 's-industry' ] ) && $industry == $_POST[ 's-industry' ] ) {
             $selected = 'selected';
         }
