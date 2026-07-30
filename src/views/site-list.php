@@ -236,6 +236,8 @@ echo '<div class="vkfsi_search-form">';
 echo '<form method="post" action="">';
 wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce' );
 echo '<input type="hidden" name="s-search" value="on">';
+echo '<input type="hidden" name="vkfsi_is_search" value="1">';
+
 echo '<h3>サイト検索</h3>';
 echo '<div class="vkfsi_search-content">';
 
