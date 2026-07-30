@@ -6,19 +6,21 @@
 global $s_theme;
 global $s_license_type;
 global $s_author;
+global $s_theme_type;
+global $s_industry;
 
-$s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-theme' ] ) : [];
-$s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-license-type' ] ) : [];
-$s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-author' ]  ) : [];
+$s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST[ 's-theme' ] ) ) : [];
+$s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST[ 's-license-type' ] ) ) : [];
+$s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST[ 's-author' ] ) ) : [];
 
 // 検索値：テーマタイプ
 if ( isset( $_POST[ 's-theme-type' ] ) ) {
-    $_POST[ 's-theme-type' ] = sanitize_text_field( $_POST[ 's-theme-type' ] );
+	$s_theme_type = sanitize_text_field( wp_unslash( $_POST[ 's-theme-type' ] ) );
 }
 
 // 検索値：業種
 if ( isset( $_POST[ 's-industry' ] ) ) {
-    $_POST[ 's-industry' ] = sanitize_text_field( $_POST[ 's-industry' ] );
+	$s_industry = sanitize_text_field( wp_unslash( $_POST[ 's-industry' ] ) );
 }
 
 ////////// 関数定義 //////////
@@ -45,7 +47,7 @@ function vkfsi_search_filter( $site ) {
 
 	// 言語
 	if ( isset( $_POST[ 's-language' ] ) ) {
-		if ( $site[ 'language' ] != $_POST[ 's-language' ] ) {
+		if ( $site[ 'language' ] !== $_POST[ 's-language' ] ) {
 			return false;
 		}
 	}
@@ -60,7 +62,8 @@ function vkfsi_search_filter( $site ) {
 
 	// テーマタイプ
 	if ( isset( $_POST[ 's-theme-type' ] ) && ! empty( $_POST[ 's-theme-type' ] ) ) {
-		if ( $site[ 'theme_type' ] != $_POST[ 's-theme-type' ] ) {
+		global $s_theme_type;
+		if ( $site[ 'theme_type' ] !== $s_theme_type ) {
 			return false;
 		}
 	}
@@ -83,7 +86,8 @@ function vkfsi_search_filter( $site ) {
 
 	// 業種
 	if ( isset( $_POST[ 's-industry' ] ) && ! empty( $_POST[ 's-industry' ] ) ) {
-		if ( ( $site[ 'industry' ] ?? '' ) != $_POST[ 's-industry' ] ) {
+		global $s_industry;
+		if ( ( $site[ 'industry' ] ?? '' ) !== $s_industry ) {
 			return false;
 		}
 	}
@@ -116,7 +120,7 @@ function vkfsi_search_filter( $site ) {
  * @return array $price_data
  */
 function vkfst_get_display_price_data( $site ) {
-	$price_normal   = isset( $site[ 'shop-item' ][ 'price' ] ) ? $site[ 'shop-item' ][ 'price' ] : '';
+	$price_normal = isset( $site[ 'shop-item' ][ 'price' ] ) ? $site[ 'shop-item' ][ 'price' ] : '';
 	$price_discount = isset( $site[ 'shop-item' ][ 'price_discount' ] ) ? $site[ 'shop-item' ][ 'price_discount' ] : '';
 
 	$price_data = array(
@@ -186,7 +190,10 @@ function vkfst_string_to_number( $number_string ){
 
 // スタイルシートの読み込み
 echo '<style>';
-echo file_get_contents( __DIR__ . '/../assets/css/style.css' );
+$css = file_get_contents( __DIR__ . '/../assets/css/style.css' );
+if ( $css !== false ) {
+	echo $css;
+}
 echo '</style>';
 
 // サイト一覧画面ヘッダー
@@ -211,9 +218,9 @@ foreach ( $sites as $site ) {
 	$search_language_array[] = $site[ 'language' ];
 	$search_license_type_array[] = $site[ 'license_type' ];
 	$search_author_array[] = $site[ 'author' ];
-    if ( isset( $site[ 'industry' ] ) && ! empty( $site[ 'industry' ] ) ) { 
-        $search_industry_array[] = $site[ 'industry' ];
-    }
+	if ( isset( $site[ 'industry' ] ) && ! empty( $site[ 'industry' ] ) ) { 
+		$search_industry_array[] = $site[ 'industry' ];
+	}
 }
 
 // array_unique で重複を削除
@@ -229,61 +236,36 @@ echo '<div class="vkfsi_search-form">';
 echo '<form method="post" action="">';
 wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce' );
 echo '<input type="hidden" name="s-search" value="on">';
+echo '<input type="hidden" name="vkfsi_is_search" value="1">';
+
 echo '<h3>サイト検索</h3>';
 echo '<div class="vkfsi_search-content">';
 
 // デフォルトの言語選択肢
 $default_language = '';
 if ( isset( $_POST[ 's-language' ] ) ) {
-    $default_language = sanitize_text_field( $_POST[ 's-language' ] );
+	$default_language = sanitize_text_field( $_POST[ 's-language' ] );
 } else {
-    $locale = get_locale();
-    if ( $locale != 'ja' ) {
-        $locale = 'en';
-    }
-    $default_language = $locale;
-}
-
-/********** 言語の検索フォーム
-// 言語の種類
-$language_name_array = [
-    'ja' => '日本語',
-    'en' => '英語',
-];
-
-// 検索フォーム - 言語
-echo '<div class="vkfsi_search-item">';
-echo '<strong>言語</strong>';
-echo '<ul class="vkfsi_input-wrap">';
-echo '<select name="s-language" id="s-language">';
-
-foreach ( $language_name_array as $language => $language_name ) {
-	$selected = '';
-	if ( $language == $default_language ) {
-		$selected = 'selected';
+	$locale = get_locale();
+	if ( $locale !== 'ja' ) {
+		$locale = 'en';
 	}
-	echo '<option value="' . esc_attr( $language ) . '" ' . $selected . '>';
-	echo esc_html( $language_name );
-	echo '</option>';
+	$default_language = $locale;
 }
-echo '</select>';
-echo '</ul>';
-echo '</div>';
-*/
 
 // 検索フォーム - テーマ
 echo '<div class="vkfsi_search-item">';
 echo '<strong>テーマ</strong>';
 echo '<ul class="vkfsi_input-wrap">';
 foreach ( $search_theme_array as $theme ) {
-    $checked = '';
-    if ( in_array( $theme, $s_theme ) ) {
-        $checked = 'checked';
-    }
-    echo '<li><label>';
-    echo '<input type="checkbox" name="s-theme[]" value="' . esc_attr( $theme ) . '" ' . $checked . '>';
-    echo esc_html( $theme );
-    echo '</label></li>';
+	$checked = '';
+	if ( in_array( $theme, $s_theme ) ) {
+		$checked = 'checked';
+	}
+	echo '<li><label>';
+	echo '<input type="checkbox" name="s-theme[]" value="' . esc_attr( $theme ) . '" ' . $checked . '>';
+	echo esc_html( $theme );
+	echo '</label></li>';
 }
 echo '</ul>';
 echo '</div>';
@@ -291,63 +273,62 @@ echo '</div>';
 // 検索フォーム - テーマタイプ
 echo '<div class="vkfsi_search-item">';
 echo '<strong>テーマタイプ</strong>';
-echo '<ul class="vkfsi_input-wrap">';
-echo '<select name="s-theme-type" id="s-theme-type">';
+echo '<div class="vkfsi_input-wrap">';
+echo '<select name="s-theme-type">';
 echo '<option value="">指定なし</option>';
 foreach ( $search_theme_type_array as $theme_type ) {
-    if ( empty( $theme_type ) ) {
-        continue;
-    }
-    $selected = '';
-    if ( isset( $_POST[ 's-theme-type' ] ) && $theme_type == $_POST[ 's-theme-type' ] ) {
-        $selected = 'selected';
-    }
-    echo '<option value="' . esc_attr( $theme_type ) . '" ' . $selected . '>';
-    echo esc_html( $theme_type );
-    echo '</option>';
+	if ( empty( $theme_type ) ) {
+		continue;
+	}
+	$selected = '';
+	if ( isset( $s_theme_type ) && $theme_type === $s_theme_type ) {
+		$selected = 'selected';
+	}
+	echo '<option value="' . esc_attr( $theme_type ) . '" ' . $selected . '>';
+	echo esc_html( $theme_type );
+	echo '</option>';
 }
 echo '</select>';
-echo '</ul>';
+echo '</div>';
 echo '</div>';
 
 // 検索フォーム - 業種
 if ( count( $search_industry_array ) > 0 ) {
-    echo '<div class="vkfsi_search-item">';
-    echo '<strong>業種</strong>';
-    echo '<ul class="vkfsi_input-wrap">';
-    echo '<select name="s-industry" id="s-industry">';
-    echo '<option value="">指定なし</option>';
-    foreach ( $search_industry_array as $industry ) {
-        if ( empty( $industry ) ) {
-            continue;
-        }
-            $selected = '';
-        if ( isset( $_POST[ 's-industry' ] ) && $industry == $_POST[ 's-industry' ] ) {
-            $selected = 'selected';
-        }
-        echo '<option value="' . esc_attr( $industry ) . '" ' . $selected . '>';
-        echo esc_html( $industry );
-        echo '</option>';
-    }
-    echo '</select>';
-    echo '</ul>';
-    echo '</div>';
+	echo '<div class="vkfsi_search-item">';
+	echo '<strong>業種</strong>';
+	echo '<div class="vkfsi_input-wrap">';
+	echo '<select name="s-industry">';
+	echo '<option value="">指定なし</option>';
+	foreach ( $search_industry_array as $industry ) {
+		if ( empty( $industry ) ) {
+			continue;
+		}
+		$selected = '';
+		if ( isset( $s_industry ) && $industry === $s_industry ) {
+			$selected = 'selected';
+		}
+		echo '<option value="' . esc_attr( $industry ) . '" ' . $selected . '>';
+		echo esc_html( $industry );
+		echo '</option>';
+	}
+	echo '</select>';
+	echo '</div>';
+	echo '</div>';
 }
 
 // 検索フォーム - ライセンス区分
 echo '<div class="vkfsi_search-item">';
 echo '<strong>ライセンス区分</strong>';
 echo '<ul class="vkfsi_input-wrap">';
-global $license_type_name_array;
 foreach ( self::$license_type_name_array as $license_type => $license_name ) {
-    $checked = '';
-    if ( in_array( $license_type, $s_license_type ) ) {
-        $checked = 'checked';
-    }
-    echo '<li><label>';
-    echo '<input type="checkbox" name="s-license-type[]" value="' . esc_attr( $license_type ) . '" ' . $checked . '>';
-    echo esc_html( $license_name );
-    echo '</label></li>';
+	$checked = '';
+	if ( in_array( $license_type, $s_license_type ) ) {
+		$checked = 'checked';
+	}
+	echo '<li><label>';
+	echo '<input type="checkbox" name="s-license-type[]" value="' . esc_attr( $license_type ) . '" ' . $checked . '>';
+	echo esc_html( $license_name );
+	echo '</label></li>';
 }
 echo '</ul>';
 echo '</div>';
@@ -357,14 +338,14 @@ echo '<div class="vkfsi_search-item">';
 echo '<strong>Author</strong>';
 echo '<ul class="vkfsi_input-wrap">';
 foreach ( $search_author_array as $author ) {
-    $checked = '';
-    if ( in_array( $author, $s_author ) ) {
-        $checked = 'checked';
-    }
-    echo '<li><label>';
-    echo '<input type="checkbox" name="s-author[]" value="' . esc_attr( $author ) . '" ' . $checked . '>';
-    echo esc_html( $author );
-    echo '</label></li>';
+	$checked = '';
+	if ( in_array( $author, $s_author ) ) {
+		$checked = 'checked';
+	}
+	echo '<li><label>';
+	echo '<input type="checkbox" name="s-author[]" value="' . esc_attr( $author ) . '" ' . $checked . '>';
+	echo esc_html( $author );
+	echo '</label></li>';
 }
 echo '</ul>';
 echo '</div>';
@@ -373,31 +354,31 @@ echo '</div>';
 echo '<div class="vkfsi_search-item">';
 $keyword = '';
 if ( isset( $_POST[ 's-keyword' ] ) ) {
-    $keyword = sanitize_text_field( $_POST[ 's-keyword' ] );
+	$keyword = sanitize_text_field( $_POST[ 's-keyword' ] );
 }
 echo '<strong>キーワード</strong>';
 echo '<div class="vkfsi_input-wrap">';
-echo '<input type="text" name="s-keyword" value="' . $keyword . '">';
+echo '<input type="text" name="s-keyword" value="' . esc_attr( $keyword ) . '">';
 echo '</div>';
 echo '</div>';
 
 // 検索フォーム - 表示順
 echo '<div class="vkfsi_search-item">';
 echo '<strong>表示順</strong>';
-echo '<ul class="vkfsi_input-wrap">';
+echo '<div class="vkfsi_input-wrap">';
 echo '<select name="s-sort" id="s-sort">';
 echo '<option value="">指定なし</option>';
 foreach ( $sort_key_array as $sort_key => $sort_name ) {
-    $selected = '';
-    if ( isset( $_POST[ 's-sort' ] ) && $sort_key == $_POST[ 's-sort' ] ) {
-        $selected = 'selected';
-    }
-    echo '<option value="' . esc_attr( $sort_key ) . '" ' . $selected . '>';
-    echo esc_html( $sort_name );
-    echo '</option>';
+	$selected = '';
+	if ( isset( $_POST[ 's-sort' ] ) && $sort_key == $_POST[ 's-sort' ] ) {
+		$selected = 'selected';
+	}
+	echo '<option value="' . esc_attr( $sort_key ) . '" ' . $selected . '>';
+	echo esc_html( $sort_name );
+	echo '</option>';
 }
 echo '</select>';
-echo '</ul>';
+echo '</div>';
 echo '</div>';
 
 echo '</div>'; // vkfsi_search-content
@@ -412,256 +393,252 @@ echo '</div>'; // vkfsi_search-form
 $vkfsi_code = isset( $_POST[ 'vkfsi_code' ] ) ? $_POST[ 'vkfsi_code' ] : '';
 ?>
 <script>
-    jQuery( function( $ ) {
-        var site_code = '<?php echo esc_js( $vkfsi_code ); ?>';
-        if ( site_code != '' ) {
-            var target = $( '#div-' + site_code );
-            if ( target.length ) {
-                var position = target.offset().top;
-                $( 'html, body' ).animate( { scrollTop: position }, 500 );
-            }
-        }
-    });
+	jQuery( function( $ ) {
+		var site_code = '<?php echo esc_js( $vkfsi_code ); ?>';
+		if ( site_code != '' ) {
+			var target = $( '#div-' + site_code );
+			if ( target.length ) {
+				var position = target.offset().top;
+				$( 'html, body' ).animate( { scrollTop: position }, 500 );
+			}
+		}
+	});
 </script>
 <?php
 
 // 検索条件にマッチしたもののみを抽出
 $filtered_sites = [];
 foreach ( $sites as $site ) {
-    // 検索条件にマッチしなければスキップ
-    if ( ! vkfsi_search_filter( $site ) ) {
-        continue;
-    }
-    $filtered_sites[] = $site;
+	// 検索条件にマッチしなければスキップ
+	if ( ! vkfsi_search_filter( $site ) ) {
+		continue;
+	}
+	$filtered_sites[] = $site;
 }
 
 if ( count( $filtered_sites ) == 0 ) {
-    echo '<div class="notice notice-info is-dismissible"><p>該当するサイトが見つかりませんでした。</p></div>';
+	echo '<div class="notice notice-info is-dismissible"><p>該当するサイトが見つかりませんでした。</p></div>';
 } else {
-    echo '<p>インストールするサイトを選択してください</p>';
+	echo '<p>インストールするサイトを選択してください</p>';
 
-    // 表示順ソート
-    $sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( $_POST[ 's-sort' ] ) : '';
-    if ( $sort_value && isset( $sort_key_array[ $sort_value ] ) ) {
-        $sort_parts = explode( '.', $sort_value, 2 );
-        $sort_field = $sort_parts[0];
-        $sort_dir   = $sort_parts[1] ?? 'asc';
-        usort( $filtered_sites, function( $a, $b ) use ( $sort_field, $sort_dir ) {
-            $val_a = $a[ $sort_field ] ?? '';
-            $val_b = $b[ $sort_field ] ?? '';
-            // 日付フィールドは Unix タイムスタンプに変換して数値比較
-            if ( in_array( $sort_field, [ 'post_date', 'post_modified' ] ) ) {
-                $time_a = $val_a ? strtotime( $val_a ) : 0;
-                $time_b = $val_b ? strtotime( $val_b ) : 0;
-                $cmp    = $time_a <=> $time_b;
-            } else {
-                $cmp = strcmp( $val_a, $val_b );
-            }
-            return $sort_dir === 'desc' ? -$cmp : $cmp;
-        } );
-    }
+	// 表示順ソート
+	$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( $_POST[ 's-sort' ] ) : '';
+	if ( $sort_value && isset( $sort_key_array[ $sort_value ] ) ) {
+		$sort_parts = explode( '.', $sort_value, 2 );
+		$sort_field = $sort_parts[0];
+		$sort_dir = $sort_parts[1] ?? 'asc';
+		usort( $filtered_sites, function( $a, $b ) use ( $sort_field, $sort_dir ) {
+			$val_a = $a[ $sort_field ] ?? '';
+			$val_b = $b[ $sort_field ] ?? '';
+			// 日付フィールドは Unix タイムスタンプに変換して数値比較
+			if ( in_array( $sort_field, [ 'post_date', 'post_modified' ] ) ) {
+				$time_a = $val_a ? strtotime( $val_a ) : 0;
+				$time_b = $val_b ? strtotime( $val_b ) : 0;
+				$cmp = $time_a <=> $time_b;
+			} else {
+				$cmp = strcmp( $val_a, $val_b );
+			}
+			return $sort_dir === 'desc' ? -$cmp : $cmp;
+		} );
+	}
 }
 
 // 検索条件用 hidden タグ
 $search_hidden = '';
 foreach ( $_POST as $key => $value ) {
-    if ( 0 === strpos( $key, 's-' ) ) {
-        if ( is_array( $value ) ) {
-            foreach ( $value as $v ) {
-                $v = sanitize_text_field( $v );
-                $search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '[]" value="' . esc_attr( $v ) . '">';
-            }
-        } else {
-            $value = sanitize_text_field( $value );
-            $search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '">';
-        }
-    }
+	if ( 0 === strpos( $key, 's-' ) ) {
+		if ( is_array( $value ) ) {
+			foreach ( $value as $v ) {
+				$v = sanitize_text_field( $v );
+				$search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '[]" value="' . esc_attr( $v ) . '">';
+			}
+		} else {
+			$value = sanitize_text_field( $value );
+			$search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '">';
+		}
+	}
 }
 
 // サイト一覧の表示
 echo '<div class="vkfsi_sites">';
 foreach ( $filtered_sites as $site ) {
-    // サイトデータの表示
-    echo '<div id="div-' . esc_attr( $site[ 'site_code' ] ) . '" class="vkfsi_site">';
+	// サイトデータの表示
+	echo '<div id="div-' . esc_attr( $site[ 'site_code' ] ) . '" class="vkfsi_site">';
 
-    // フォーム
-    echo '<form method="post" action="">';
-    wp_nonce_field( 'vkfsi_license_action', 'vkfsi_license_nonce' );
+	// フォーム
+	echo '<form method="post" action="">';
+	wp_nonce_field( 'vkfsi_license_action', 'vkfsi_license_nonce' );
 
-    // サイトコードとライセンスタイプ
-    echo '<input type="hidden" name="vkfsi_code" value="' . esc_html( $site[ 'site_code' ] ) . '">';
-    echo '<input type="hidden" name="vkfsi_license_type" value="' . esc_html( $site[ 'license_type' ] ) . '">';
+	// サイトコードとライセンスタイプ
+	echo '<input type="hidden" name="vkfsi_code" value="' . esc_html( $site[ 'site_code' ] ) . '">';
+	echo '<input type="hidden" name="vkfsi_license_type" value="' . esc_html( $site[ 'license_type' ] ) . '">';
 
-    // 検索条件用 hidden タグ
-    echo $search_hidden;
+	// 検索条件用 hidden タグ
+	echo $search_hidden;
 
-    // サムネイル画像
-    echo '<a href="' . esc_url( $site[ 'demo_url' ] ) . '" target="_blank">';
-    echo '<img src="' . esc_url( $site[ 'thumbnail_url' ] ) . '" alt="' . esc_attr( $site[ 'site_name' ] ) . '" width="300" class="vkfsi_thumbnail">';
-    echo '</a>';
+	// サムネイル画像
+	echo '<a href="' . esc_url( $site[ 'demo_url' ] ) . '" target="_blank">';
+	echo '<img src="' . esc_url( $site[ 'thumbnail_url' ] ) . '" alt="' . esc_attr( $site[ 'site_name' ] ) . '" width="300" class="vkfsi_thumbnail">';
+	echo '</a>';
 
-    // サイト名の表示
-    echo '<h3>' . esc_html( $site[ 'site_name' ] ) . '</h3>';
+	// サイト名の表示
+	echo '<h3>' . esc_html( $site[ 'site_name' ] ) . '</h3>';
 
-    $license_type = '';
-    switch ( $site['license_type'] ) {
-        case VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE:
-            $license_type = '無料';
-            break;
-        case VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT:
-            $license_type = 'Vektor Passport';
-            break;
-        case VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE:
-            $license_type = 'Vektor Passport + サイトライセンス';
-            break;
-        case VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE:
-            $license_type = 'サイトライセンス';
-            break;
-        default:
-            $license_type = '';
-            break;
-    }
+	$license_type = '';
+	switch ( $site['license_type'] ) {
+		case VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE:
+			$license_type = '無料';
+			break;
+		case VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT:
+			$license_type = 'Vektor Passport';
+			break;
+		case VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE:
+			$license_type = 'Vektor Passport + サイトライセンス';
+			break;
+		case VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE:
+			$license_type = 'サイトライセンス';
+			break;
+		default:
+			$license_type = '';
+		break;
+	}
 
-    echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">ライセンスタイプ</span></dt><dd>' . $license_type . '</dd></dl>';
-    // 使用テーマの表示
-    echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">使用テーマ</span></dt><dd>' . $site[ 'theme' ] . '</dd></dl>';
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">ライセンスタイプ</span></dt><dd>' . $license_type . '</dd></dl>';
+	// 使用テーマの表示
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">使用テーマ</span></dt><dd>' . esc_html( $site[ 'theme' ] ). '</dd></dl>';
 
-    echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">テーマタイプ</span></dt><dd>' . $site[ 'theme_type' ] . '</dd></dl>';
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">テーマタイプ</span></dt><dd>' . esc_html( $site[ 'theme_type' ] ). '</dd></dl>';
 
-    // 使用言語の表示
-    // echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">使用言語</span></dt><dd>' . $site[ 'language' ] . '</dd></dl>';
+	// Author の表示
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">Author</span></dt><dd>' . esc_html( $site[ 'author' ] ) . '</dd></dl>';
 
-    // Author の表示
-    echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">Author</span></dt><dd>' . $site[ 'author' ] . '</dd></dl>';
+	// Price
+	$price_data = vkfst_get_display_price_data( $site );
+	$price_html = '<div class="vkfsi_price-outer">';
+	$price_html .= vkfst_get_display_price_html( $price_data );
+	if (
+		VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE === $site[ 'license_type' ]
+		|| VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT === $site[ 'license_type' ]
+		) {
+		$price_html .= '<span class="vkfsi_price_passport">※ 別途 <a href="https://vws.vektor-inc.co.jp/vektor-passport" target="_blank">Vektor Passport</a> が必要です</span>';
+	}
+	$price_html .= '</div>'; // vkfsi_price-outer
 
-    // Price ///////////////////////////////////////////////////////////////
-    $price_data = vkfst_get_display_price_data( $site );
-    $price_html = '<div class="vkfsi_price-outer">';
-    $price_html .= vkfst_get_display_price_html( $price_data );
-    if (
-        VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE == $site[ 'license_type' ]
-        || VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT == $site[ 'license_type' ]
-        ) {
-        $price_html .= '<span class="vkfsi_price_passport">※ 別途 <a href="https://vws.vektor-inc.co.jp/vektor-passport" target="_blank">Vektor Passport</a> が必要です</span>';
-    }
-    $price_html .= '</div>'; // vkfsi_price-outer
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">販売価格</span></dt><dd>';
+	echo $price_html;
+	echo '</dd></dl>';
 
-    echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">販売価格</span></dt><dd>';
-    echo $price_html;
-    echo '</dd></dl>';
+	echo '<div class="vkfsi_description">';
+	echo esc_html( $site[ 'description' ] );
+	echo '</div>';
 
-    echo '<div class="vkfsi_description">';
-    echo esc_html( $site[ 'description' ] );
-    echo '</div>';
+	// $data_url はループの外からもってきているので、ループ内で $site の内容に応じて書き換えてしまうとるとインストール URL がおかしくなるので注意
+	if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE === $site[ 'license_type' ] ) {
+		$submit_data_url = $site[ 'data_url' ];
+	} else {
+		$submit_data_url = $data_url;
+	}
+	echo '<input type="hidden" name="vkfsi_data_url" value="' . esc_url( $submit_data_url ) . '">';
 
-    // $data_url はループの外からもってきているので、ループ内で $site の内容に応じて書き換えてしまうとるとインストール URL がおかしくなるので注意
-    if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE == $site[ 'license_type' ] ) {
-        $submit_data_url = $site[ 'data_url' ];
-    } else {
-        $submit_data_url = $data_url;
-    }
-    echo '<input type="hidden" name="vkfsi_data_url" value="' . esc_url( $submit_data_url ) . '">';
+	echo '<div class="vkfsi_btn-outer">';
+	echo '<div class="vkfsi_btn-inner">';
 
-    echo '<div class="vkfsi_btn-outer">';
-    echo '<div class="vkfsi_btn-inner">';
+	// デモサイトへのリンク表示
+	echo '<p class="vkfsi_site-demo-url">
+		<a href="' . esc_url( $site[ 'demo_url' ] ) . '" target="_blank" class="button vkfsi_button-with-icon">
+			<span class="vkfsi_button-text">デモサイトを見る</span>
+			<svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
+				<use xlink:href="#icon-external-link"></use>
+			</svg>
+		</a>
+	</p>';
 
-    // デモサイトへのリンク表示
-    echo '<p class="vkfsi_site-demo-url">
-        <a href="' . esc_url( $site[ 'demo_url' ] ) . '" target="_blank" class="button vkfsi_button-with-icon">
-            <span class="vkfsi_button-text">デモサイトを見る</span>
-            <svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
-                <use xlink:href="#icon-external-link"></use>
-            </svg>
-        </a>
-    </p>';
+	// インポートボタンの表示処理
+	// 無料版の場合は無条件で表示する
+	if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE === $site[ 'license_type' ] ) {
+		echo '<p class="submit">
+			<button type="submit" name="select_site" id="select_site" class="button button-primary vkfsi_button-with-icon">
+				<span class="vkfsi_button-text">このサイトをインポート</span>
+				<svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
+					<use xlink:href="#icon-import"></use>
+				</svg>
+			</button>
+		</p>';
 
-    // インポートボタンの表示処理
-    // 無料版の場合は無条件で表示する
-    if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE == $site[ 'license_type' ] ) {
-        echo '<p class="submit">
-            <button type="submit" name="select_site" id="select_site" class="button button-primary vkfsi_button-with-icon">
-                <span class="vkfsi_button-text">このサイトをインポート</span>
-                <svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
-                    <use xlink:href="#icon-import"></use>
-                </svg>
-            </button>
-        </p>';
+	// 有料版の場合は、ダウンロード URL が空文字でなければ、インポートボタンを表示
+	} else {
+		if ( '' !== $data_url && $site_code === $site[ 'site_code' ] ) {
+			echo '<p class="submit">
+				<button type="submit" name="select_site" id="select_site" class="button button-primary vkfsi_button-with-icon">
+					<span class="vkfsi_button-text">このサイトをインポート</span>
+					<svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
+						<use xlink:href="#icon-import"></use>
+					</svg>
+				</button>
+			</p>';
+		}
+	}
 
-    // 有料版の場合は、ダウンロード URL が空文字でなければ、インポートボタンを表示
-    } else {
-        if ( '' != $data_url && $site_code == $site[ 'site_code' ] ) {
-            echo '<p class="submit">
-                <button type="submit" name="select_site" id="select_site" class="button button-primary vkfsi_button-with-icon">
-                    <span class="vkfsi_button-text">このサイトをインポート</span>
-                    <svg class="vkfsi_icon" width="18" height="18" aria-hidden="true">
-                        <use xlink:href="#icon-import"></use>
-                    </svg>
-                </button>
-            </p>';
-        }
-    }
+	// Vektor Passport ライセンスキーの入力欄
+	if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE === $site[ 'license_type' ]
+		|| VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT === $site[ 'license_type' ] ) {
 
-    // Vektor Passport ライセンスキーの入力欄
-    if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE == $site[ 'license_type' ]
-        || VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT == $site[ 'license_type' ] ) {
+		echo '<label for="license_key_vektor_passport">Vektor Passport ライセンスキー</label>';
+		echo '<div class="vkfsi_license-form">';
 
-        echo '<label for="license_key_vektor_passport">Vektor Passport ライセンスキー</label>';
-        echo '<div class="vkfsi_license-form">';
+		// エラーメッセージを表示
+		if ( $error_flag_passport && $site_code === $site[ 'site_code' ]) {
+			echo '<div class="vkfsi_error">Vektor Passport ライセンスキーが間違っています。</div>';
+		}
 
-        // エラーメッセージを表示
-        if ( $error_flag_passport && $site_code == $site[ 'site_code' ]) {
-            echo '<div class="vkfsi_error">Vektor Passport ライセンスキーが間違っています。</div>';
-        }
+		// 保存ボタンを押したサイトコードと同じなら、
+		// Vektor Passport ライセンスキーを表示する
+		if ( $site_code === $site[ 'site_code' ] ) {
+			echo '<input type="password" name="license_key_vektor_passport" value="' . esc_attr( $license_key_passport ) . '">';
+		} else {
+			echo '<input type="password" name="license_key_vektor_passport" value="">';
+		}
+		submit_button( '保存', 'primary', 'save_license_key_vektor_passport' );
 
-        // 保存ボタンを押したサイトコードと同じなら、
-        // Vektor Passport ライセンスキーを表示する
-        if ( $site_code == $site[ 'site_code' ] ) {
-            echo '<input type="password" name="license_key_vektor_passport" value="' . $license_key_passport . '">';
-        } else {
-            echo '<input type="password" name="license_key_vektor_passport" value="">';
-        }
-        submit_button( '保存', 'primary', 'save_license_key_vektor_passport' );
+		// 購入ボタン
+		echo '<a href="' . PASSPORT_PURCHASE_URL . '" target="_blank">';
+		echo '<button type="button" class="button button-primary">購入</button>';
+		echo '</a>';
+		echo '</div>';
+	}
 
-        // 購入ボタン
-        echo '<a href="' . PASSPORT_PURCHASE_URL . '" target="_blank">';
-        echo '<button type="button" class="button button-primary">購入</button>';
-        echo '</a>';
-        echo '</div>';
-    }
+	// サイトライセンスキーの入力欄
+	if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE === $site[ 'license_type' ]
+		|| VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE === $site[ 'license_type' ] ) {
 
-    // サイトライセンスキーの入力欄
-    if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE == $site[ 'license_type' ]
-        || VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE == $site[ 'license_type' ] ) {
+		echo '<label for="license_key_site">サイト ライセンスキー</label>';
+		echo '<div class="vkfsi_license-form">';
 
-        echo '<label for="license_key_site">サイト ライセンスキー</label>';
-        echo '<div class="vkfsi_license-form">';
+		// エラーメッセージを表示
+		if ( $error_flag_site && $site_code === $site[ 'site_code' ] ) {
+			echo '<div class="vkfsi_error">サイトライセンスキーが間違っています。</div>';
+		}
 
-        // エラーメッセージを表示
-        if ( $error_flag_site && $site_code == $site[ 'site_code' ] ) {
-            echo '<div class="vkfsi_error">サイトライセンスキーが間違っています。</div>';
-        }
+		// 保存ボタンを押したサイトコードと同じなら、
+		// サイトライセンスキーを表示する
+		if ( $site_code === $site[ 'site_code' ] ) {
+			echo '<input type="password" name="license_key_site" value="' . esc_attr( $license_key_site ) . '">';
+		} else {
+			echo '<input type="password" name="license_key_site" value="">';
+		}
+		submit_button( '保存', 'primary', 'save_license_key_site' );
 
-        // 保存ボタンを押したサイトコードと同じなら、
-        // サイトライセンスキーを表示する
-        if ( $site_code == $site[ 'site_code' ] ) {
-            echo '<input type="password" name="license_key_site" value="' . $license_key_site . '">';
-        } else {
-            echo '<input type="password" name="license_key_site" value="">';
-        }
-        submit_button( '保存', 'primary', 'save_license_key_site' );
+		// 購入ボタン
+		echo '<a href="' . esc_url( $site['shop-item' ][ 'buy-link' ] ). '" target="_blank">';
+		echo '<button type="button" class="button button-primary">購入</button>';
+		echo '</a>';
+		echo '</div>';
+	}
 
-        // 購入ボタン
-        echo '<a href="' . $site['shop-item' ][ 'buy-link' ] . '" target="_blank">';
-        echo '<button type="button" class="button button-primary">購入</button>';
-        echo '</a>';
-        echo '</div>';
-    }
-
-    echo '</div>';
-    echo '</div>';
-    echo '</form>';
-    echo '</div>';
+	echo '</div>';
+	echo '</div>';
+	echo '</form>';
+	echo '</div>';
 }
 echo '</div>';
 echo '</div>';
-
