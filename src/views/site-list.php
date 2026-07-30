@@ -9,18 +9,18 @@ global $s_author;
 global $s_theme_type;
 global $s_industry;
 
-$s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-theme' ] ) : [];
-$s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-license-type' ] ) : [];
-$s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', (array) $_POST[ 's-author' ]  ) : [];
+$s_theme = isset( $_POST[ 's-theme' ] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST[ 's-theme' ] ) ) : [];
+$s_license_type = isset( $_POST[ 's-license-type' ] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST[ 's-license-type' ] ) ) : [];
+$s_author = isset( $_POST[ 's-author' ] ) ? array_map( 'sanitize_text_field', wp_unslash( (array) $_POST[ 's-author' ] ) ) : [];
 
 // 検索値：テーマタイプ
 if ( isset( $_POST[ 's-theme-type' ] ) ) {
-	$s_theme_type = sanitize_text_field( $_POST[ 's-theme-type' ] );
+	$s_theme_type = sanitize_text_field( wp_unslash( $_POST[ 's-theme-type' ] ) );
 }
 
 // 検索値：業種
 if ( isset( $_POST[ 's-industry' ] ) ) {
-	$s_industry = sanitize_text_field( $_POST[ 's-industry' ] );
+	$s_industry = sanitize_text_field( wp_unslash( $_POST[ 's-industry' ] ) );
 }
 
 ////////// 関数定義 //////////
@@ -281,7 +281,7 @@ foreach ( $search_theme_type_array as $theme_type ) {
 		continue;
 	}
 	$selected = '';
-	if ( isset( $_POST[ 's-theme-type' ] ) && $theme_type === $_POST[ 's-theme-type' ] ) {
+	if ( isset( $s_theme_type ) && $theme_type === $s_theme_type ) {
 		$selected = 'selected';
 	}
 	echo '<option value="' . esc_attr( $theme_type ) . '" ' . $selected . '>';
@@ -304,7 +304,7 @@ if ( count( $search_industry_array ) > 0 ) {
 			continue;
 		}
 		$selected = '';
-		if ( isset( $_POST[ 's-industry' ] ) && $industry === $_POST[ 's-industry' ] ) {
+		if ( isset( $s_industry ) && $industry === $s_industry ) {
 			$selected = 'selected';
 		}
 		echo '<option value="' . esc_attr( $industry ) . '" ' . $selected . '>';
