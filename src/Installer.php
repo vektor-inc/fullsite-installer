@@ -803,6 +803,13 @@ class Installer {
 			}
 		}
 
+		// 検索フォームの nonce 検証
+		if ( isset( $_POST[ 's-search' ] ) && $_POST[ 's-search' ] === 'on' ) {
+			if ( ! isset( $_POST[ 'vkfsi_search_nonce' ] ) || ! wp_verify_nonce( $_POST[ 'vkfsi_search_nonce' ], 'vkfsi_search_action' ) ) {
+				wp_die( esc_html__( 'Invalid request.', 'default' ) );
+			}
+		}
+
 		// 管理画面のインポートページを表示
 		require_once __DIR__ . '/views/site-list.php';
 	}
