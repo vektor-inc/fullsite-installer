@@ -2,6 +2,15 @@
 
 ////////// 事前処理 //////////
 
+// 検索フォームの nonce 検証結果をグローバルに保持する。
+// フラグ変数（vkfsi_is_search）ではなく nonce の有効性で判断することで、
+// フラグなし・nonce なしで POST されても検索処理をスキップできる。
+global $vkfsi_search_nonce_verified;
+$vkfsi_search_nonce_verified = isset( $_POST['vkfsi_search_nonce'] ) && wp_verify_nonce( // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- wp_verify_nonce が内部で処理する。
+	sanitize_text_field( wp_unslash( $_POST['vkfsi_search_nonce'] ) ),
+	'vkfsi_search_action'
+);
+
 // 検索用 POST 配列のサニタイズ
 global $s_theme;
 global $s_license_type;
@@ -27,12 +36,12 @@ if ( isset( $_POST[ 's-industry' ] ) ) {
 
 // ソートキー
 $sort_key_array = [
-    'post_date.desc' => '公開日 降順',
-    'post_date.asc' => '公開日 昇順',
-    'post_modified.desc' => '更新日 降順',
-    'post_modified.asc' => '更新日 昇順',
-    'site_name.desc' => 'タイトル 降順',
-    'site_name.asc' => 'タイトル 昇順',
+	'post_date.desc' => '公開日 降順',
+	'post_date.asc' => '公開日 昇順',
+	'post_modified.desc' => '更新日 降順',
+	'post_modified.asc' => '更新日 昇順',
+	'site_name.desc' => 'タイトル 降順',
+	'site_name.asc' => 'タイトル 昇順',
 ];
 
 /**
@@ -41,6 +50,12 @@ $sort_key_array = [
  * @return bool true: 検索条件にマッチする、false: 検索条件にマッチしない
  */
 function vkfsi_search_filter( $site ) {
+	global $vkfsi_search_nonce_verified;
+	// nonce が未検証（未送信・改ざん含む）の場合は検索フィルターを適用しない。
+	if ( ! $vkfsi_search_nonce_verified ) {
+		return true;
+	}
+
 	if ( ! isset( $_POST[ 's-search' ] ) ) {
 		return true;
 	}
@@ -54,7 +69,7 @@ function vkfsi_search_filter( $site ) {
 
 	// テーマ
 	if ( isset( $_POST[ 's-theme' ] ) ) {
-        global $s_theme;
+		global $s_theme;
 		if ( ! in_array( $site[ 'theme' ], $s_theme ) ) {
 			return false;
 		}
@@ -70,7 +85,7 @@ function vkfsi_search_filter( $site ) {
 
 	// ライセンス区分
 	if ( isset( $_POST[ 's-license-type' ] ) ) {
-        global $s_license_type;
+		global $s_license_type;
 		if ( ! in_array( $site[ 'license_type' ], $s_license_type ) ) {
 			return false;
 		}
@@ -78,7 +93,7 @@ function vkfsi_search_filter( $site ) {
 
 	// Author
 	if ( isset( $_POST[ 's-author' ] ) ) {
-        global $s_author;
+		global $s_author;
 		if ( ! in_array( $site[ 'author' ], $s_author ) ) {
 			return false;
 		}
@@ -87,14 +102,19 @@ function vkfsi_search_filter( $site ) {
 	// 業種
 	if ( isset( $_POST[ 's-industry' ] ) && ! empty( $_POST[ 's-industry' ] ) ) {
 		global $s_industry;
-		if ( ( $site[ 'industry' ] ?? '' ) !== $s_industry ) {
+		if ( '__unset__' === $s_industry ) {
+			// 「業種未設定」選択時は industry が空のサイトのみ通す。
+			if ( ! empty( $site[ 'industry' ] ?? '' ) ) {
+				return false;
+			}
+		} elseif ( ( $site[ 'industry' ] ?? '' ) !== $s_industry ) {
 			return false;
 		}
 	}
 
 	// キーワード
 	if ( isset( $_POST[ 's-keyword' ] ) ) {
-		$input_keyword = sanitize_text_field( $_POST[ 's-keyword' ] );
+		$input_keyword = sanitize_text_field( wp_unslash ( $_POST[ 's-keyword' ] ) );
 		$input_keyword = str_replace( '　', ' ', $input_keyword );
 		$keyword_array = explode( ' ', $input_keyword );
 		$match_counter = 0;
@@ -104,7 +124,7 @@ function vkfsi_search_filter( $site ) {
 				$match_counter++;
 			}
 		}
-		if ( $match_counter != count( $keyword_array ) ) {
+		if ( $match_counter !== count( $keyword_array ) ) {
 			return false;
 		}
 	}
@@ -212,24 +232,33 @@ $search_theme_type_array = []; // テーマタイプの配列
 $search_license_type_array = []; // ライセンス区分の配列
 $search_author_array = []; // Author の配列
 $search_industry_array = []; // 業種の配列
+$has_unset_industry = false; // 業種未設定のサイトが存在するか
 foreach ( $sites as $site ) {
 	$search_theme_array[] = $site[ 'theme' ];
 	$search_theme_type_array[] = $site[ 'theme_type' ];
 	$search_language_array[] = $site[ 'language' ];
 	$search_license_type_array[] = $site[ 'license_type' ];
 	$search_author_array[] = $site[ 'author' ];
-	if ( isset( $site[ 'industry' ] ) && ! empty( $site[ 'industry' ] ) ) { 
+	if ( isset( $site[ 'industry' ] ) && ! empty( $site[ 'industry' ] ) ) {
 		$search_industry_array[] = $site[ 'industry' ];
+	} else {
+		$has_unset_industry = true;
 	}
 }
 
-// array_unique で重複を削除
+// 重複削除後に昇順ソートして選択肢の並びを決定的にする。
 $search_theme_array = array_unique( $search_theme_array );
+sort( $search_theme_array );
 $search_theme_type_array = array_unique( $search_theme_type_array );
+sort( $search_theme_type_array );
 $search_language_array = array_unique( $search_language_array );
+sort( $search_language_array );
 $search_license_type_array = array_unique( $search_license_type_array );
+sort( $search_license_type_array );
 $search_author_array = array_unique( $search_author_array );
+sort( $search_author_array );
 $search_industry_array = array_unique( $search_industry_array );
+sort( $search_industry_array );
 
 // 検索フォーム
 echo '<div class="vkfsi_search-form">';
@@ -244,7 +273,7 @@ echo '<div class="vkfsi_search-content">';
 // デフォルトの言語選択肢
 $default_language = '';
 if ( isset( $_POST[ 's-language' ] ) ) {
-	$default_language = sanitize_text_field( $_POST[ 's-language' ] );
+	$default_language = sanitize_text_field( wp_unslash ( $_POST[ 's-language' ] ) );
 } else {
 	$locale = get_locale();
 	if ( $locale !== 'ja' ) {
@@ -255,7 +284,8 @@ if ( isset( $_POST[ 's-language' ] ) ) {
 
 // 検索フォーム - テーマ
 echo '<div class="vkfsi_search-item">';
-echo '<strong>テーマ</strong>';
+echo '<fieldset>';
+echo '<legend>テーマ</legend>';
 echo '<ul class="vkfsi_input-wrap">';
 foreach ( $search_theme_array as $theme ) {
 	$checked = '';
@@ -268,13 +298,14 @@ foreach ( $search_theme_array as $theme ) {
 	echo '</label></li>';
 }
 echo '</ul>';
+echo '</fieldset>';
 echo '</div>';
 
 // 検索フォーム - テーマタイプ
 echo '<div class="vkfsi_search-item">';
-echo '<strong>テーマタイプ</strong>';
+echo '<label for="s-theme-type">テーマタイプ</label>';
 echo '<div class="vkfsi_input-wrap">';
-echo '<select name="s-theme-type">';
+echo '<select name="s-theme-type" id="s-theme-type">';
 echo '<option value="">指定なし</option>';
 foreach ( $search_theme_type_array as $theme_type ) {
 	if ( empty( $theme_type ) ) {
@@ -292,12 +323,12 @@ echo '</select>';
 echo '</div>';
 echo '</div>';
 
-// 検索フォーム - 業種
-if ( count( $search_industry_array ) > 0 ) {
+// 検索フォーム - 業種（業種未設定サイトが存在する場合も含めて表示する）
+if ( count( $search_industry_array ) > 0 || $has_unset_industry ) {
 	echo '<div class="vkfsi_search-item">';
-	echo '<strong>業種</strong>';
+	echo '<label for="s-industry">業種</label>';
 	echo '<div class="vkfsi_input-wrap">';
-	echo '<select name="s-industry">';
+	echo '<select name="s-industry" id="s-industry">';
 	echo '<option value="">指定なし</option>';
 	foreach ( $search_industry_array as $industry ) {
 		if ( empty( $industry ) ) {
@@ -311,6 +342,11 @@ if ( count( $search_industry_array ) > 0 ) {
 		echo esc_html( $industry );
 		echo '</option>';
 	}
+	// 業種未設定サイトが 1 件以上ある場合のみ選択肢を追加する。
+	if ( $has_unset_industry ) {
+		$selected = ( isset( $s_industry ) && '__unset__' === $s_industry ) ? 'selected' : '';
+		echo '<option value="__unset__" ' . $selected . '>業種未設定</option>';
+	}
 	echo '</select>';
 	echo '</div>';
 	echo '</div>';
@@ -318,7 +354,8 @@ if ( count( $search_industry_array ) > 0 ) {
 
 // 検索フォーム - ライセンス区分
 echo '<div class="vkfsi_search-item">';
-echo '<strong>ライセンス区分</strong>';
+echo '<fieldset>';
+echo '<legend>ライセンス区分</legend>';
 echo '<ul class="vkfsi_input-wrap">';
 foreach ( self::$license_type_name_array as $license_type => $license_name ) {
 	$checked = '';
@@ -331,11 +368,13 @@ foreach ( self::$license_type_name_array as $license_type => $license_name ) {
 	echo '</label></li>';
 }
 echo '</ul>';
+echo '</fieldset>';
 echo '</div>';
 
 // 検索フォーム - Author
 echo '<div class="vkfsi_search-item">';
-echo '<strong>Author</strong>';
+echo '<fieldset>';
+echo '<legend>Author</legend>';
 echo '<ul class="vkfsi_input-wrap">';
 foreach ( $search_author_array as $author ) {
 	$checked = '';
@@ -348,29 +387,32 @@ foreach ( $search_author_array as $author ) {
 	echo '</label></li>';
 }
 echo '</ul>';
+echo '</fieldset>';
 echo '</div>';
 
 // 検索フォーム - キーワード
 echo '<div class="vkfsi_search-item">';
 $keyword = '';
 if ( isset( $_POST[ 's-keyword' ] ) ) {
-	$keyword = sanitize_text_field( $_POST[ 's-keyword' ] );
+	$keyword = sanitize_text_field( wp_unslash ( $_POST[ 's-keyword' ] ) );
 }
-echo '<strong>キーワード</strong>';
+echo '<label for="s-keyword">キーワード</label>';
 echo '<div class="vkfsi_input-wrap">';
-echo '<input type="text" name="s-keyword" value="' . esc_attr( $keyword ) . '">';
+echo '<input type="text" name="s-keyword" id="s-keyword" value="' . esc_attr( $keyword ) . '">';
 echo '</div>';
 echo '</div>';
 
 // 検索フォーム - 表示順
 echo '<div class="vkfsi_search-item">';
-echo '<strong>表示順</strong>';
+echo '<label for="s-sort">表示順</label>';
 echo '<div class="vkfsi_input-wrap">';
 echo '<select name="s-sort" id="s-sort">';
 echo '<option value="">指定なし</option>';
+
+$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 's-sort' ] ) ) : '';
 foreach ( $sort_key_array as $sort_key => $sort_name ) {
 	$selected = '';
-	if ( isset( $_POST[ 's-sort' ] ) && $sort_key == $_POST[ 's-sort' ] ) {
+	if ( $sort_key === $sort_value ) {
 		$selected = 'selected';
 	}
 	echo '<option value="' . esc_attr( $sort_key ) . '" ' . $selected . '>';
@@ -383,14 +425,22 @@ echo '</div>';
 
 echo '</div>'; // vkfsi_search-content
 
-// 検索フォーム - 検索ボタン
+// 検索フォーム - 検索ボタン / リセットボタン
 echo '<input type="submit" value="検索" class="button button-primary">';
+
+// POST なしで同ページへ遷移することで全条件をクリアする。
+$reset_url = add_query_arg(
+	'page',
+	sanitize_text_field( wp_unslash( $_GET['page'] ?? '' ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- ページスラッグの取得のみで書き込みは行わない。
+	admin_url( 'admin.php' )
+);
+echo ' <a href="' . esc_url( $reset_url ) . '" class="button">検索条件をリセット</a>';
 
 echo '</form>';
 echo '</div>'; // vkfsi_search-form
 
 // 指定された site_code があれば、そのサイトまでスクロールさせる
-$vkfsi_code = isset( $_POST[ 'vkfsi_code' ] ) ? $_POST[ 'vkfsi_code' ] : '';
+$vkfsi_code = isset( $_POST[ 'vkfsi_code' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 'vkfsi_code' ] ) ) : '';
 ?>
 <script>
 	jQuery( function( $ ) {
@@ -416,13 +466,43 @@ foreach ( $sites as $site ) {
 	$filtered_sites[] = $site;
 }
 
-if ( count( $filtered_sites ) == 0 ) {
-	echo '<div class="notice notice-info is-dismissible"><p>該当するサイトが見つかりませんでした。</p></div>';
+if ( count( $filtered_sites ) === 0 ) {
+	// 有効な絞り込み条件を収集する（サニタイズ済みグローバルを再利用）。
+	$active_conditions = [];
+	if ( ! empty( $s_theme ) ) {
+		$active_conditions[] = 'テーマ: ' . implode( ', ', $s_theme );
+	}
+	if ( isset( $s_theme_type ) && '' !== $s_theme_type ) {
+		$active_conditions[] = 'テーマタイプ: ' . $s_theme_type;
+	}
+	if ( isset( $s_industry ) && '' !== $s_industry ) {
+		$active_conditions[] = '業種: ' . $s_industry;
+	}
+	if ( ! empty( $s_license_type ) ) {
+		$active_conditions[] = 'ライセンス区分: ' . implode( ', ', $s_license_type );
+	}
+	if ( ! empty( $s_author ) ) {
+		$active_conditions[] = 'Author: ' . implode( ', ', $s_author );
+	}
+	if ( isset( $keyword ) && '' !== $keyword ) {
+		$active_conditions[] = 'キーワード: ' . $keyword;
+	}
+	if ( isset( $_POST['s-language'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- 表示用途のみ。
+		$active_conditions[] = '言語: ' . sanitize_text_field( wp_unslash( $_POST['s-language'] ) );
+	}
+
+	echo '<div class="notice notice-info">';
+	echo '<p><strong>該当するサイトが見つかりませんでした。</strong></p>';
+	if ( ! empty( $active_conditions ) ) {
+		echo '<p>絞り込み条件: ' . implode( ' ／ ', array_map( 'esc_html', $active_conditions ) ) . '</p>';
+	}
+	echo '<p><a href="' . esc_url( $reset_url ) . '" class="button button-secondary">検索条件をリセット</a></p>';
+	echo '</div>';
 } else {
 	echo '<p>インストールするサイトを選択してください</p>';
 
 	// 表示順ソート
-	$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( $_POST[ 's-sort' ] ) : '';
+	$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 's-sort' ] ) ) : '';
 	if ( $sort_value && isset( $sort_key_array[ $sort_value ] ) ) {
 		$sort_parts = explode( '.', $sort_value, 2 );
 		$sort_field = $sort_parts[0];
@@ -449,11 +529,11 @@ foreach ( $_POST as $key => $value ) {
 	if ( 0 === strpos( $key, 's-' ) ) {
 		if ( is_array( $value ) ) {
 			foreach ( $value as $v ) {
-				$v = sanitize_text_field( $v );
+				$v = sanitize_text_field( wp_unslash ( $v ) );
 				$search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '[]" value="' . esc_attr( $v ) . '">';
 			}
 		} else {
-			$value = sanitize_text_field( $value );
+			$value = sanitize_text_field( wp_unslash ( $value ) );
 			$search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '">';
 		}
 	}
@@ -511,6 +591,9 @@ foreach ( $filtered_sites as $site ) {
 
 	// Author の表示
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">Author</span></dt><dd>' . esc_html( $site[ 'author' ] ) . '</dd></dl>';
+
+	// 業種の表示（未設定時は空欄で行を残す）
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site[ 'industry' ] ?? '' ) . '</dd></dl>';
 
 	// Price
 	$price_data = vkfst_get_display_price_data( $site );

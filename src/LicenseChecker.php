@@ -2,8 +2,6 @@
 
 namespace VektorInc\FullSiteInstaller;
 
-use \GuzzleHttp\Client;
-
 class LicenseChecker {
 
 	use Singleton;

@@ -803,13 +803,6 @@ class Installer {
 			}
 		}
 
-		// 検索フォームの nonce 検証（vkfsi_is_search はサイトフォームに引き継がれないため確実に検索フォーム送信を識別できる）
-		if ( isset( $_POST[ 'vkfsi_is_search' ] ) ) {
-			if ( ! isset( $_POST[ 'vkfsi_search_nonce' ] ) || ! wp_verify_nonce( $_POST[ 'vkfsi_search_nonce' ], 'vkfsi_search_action' ) ) {
-				wp_die( esc_html__( 'Invalid request.', 'default' ) );
-			}
-		}
-
 		// 管理画面のインポートページを表示
 		require_once __DIR__ . '/views/site-list.php';
 	}

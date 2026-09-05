@@ -57,6 +57,7 @@ body.settings_page_vk-fullsite-installer {
         max-width: 800px;
         font-size: 1rem;
         letter-spacing: .5em;
+        text-align: center;
     }
 }
 .vkfsi_search-content{
@@ -66,7 +67,11 @@ body.settings_page_vk-fullsite-installer {
     & .vkfsi_search-item {
         flex-basis: calc(33.33% - var(--vk-gap));
 
-        @media (max-width: 768px) {
+        @media (max-width: 782px) {
+            flex-basis: calc(50% - var(--vk-gap));
+        }
+
+        @media (max-width: 480px) {
             flex-basis: 100%;
         }
 
@@ -79,6 +84,9 @@ body.settings_page_vk-fullsite-installer {
             & input[type=text]{
                 width: 100%;
                 max-width: 100%;
+            }
+            & select{
+                width: 100%;
             }
             & li{
                 margin-bottom: 0;
