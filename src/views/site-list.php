@@ -330,6 +330,11 @@ if ( count( $search_industry_array ) > 0 || $has_unset_industry ) {
 	echo '<div class="vkfsi_input-wrap">';
 	echo '<select name="s-industry" id="s-industry">';
 	echo '<option value="">指定なし</option>';
+	// 業種未設定サイトが 1 件以上ある場合のみ選択肢を追加する（「指定なし」の直後に配置）。
+	if ( $has_unset_industry ) {
+		$selected = ( isset( $s_industry ) && '__unset__' === $s_industry ) ? 'selected' : '';
+		echo '<option value="__unset__" ' . $selected . '>業種未設定</option>';
+	}
 	foreach ( $search_industry_array as $industry ) {
 		if ( empty( $industry ) ) {
 			continue;
@@ -341,11 +346,6 @@ if ( count( $search_industry_array ) > 0 || $has_unset_industry ) {
 		echo '<option value="' . esc_attr( $industry ) . '" ' . $selected . '>';
 		echo esc_html( $industry );
 		echo '</option>';
-	}
-	// 業種未設定サイトが 1 件以上ある場合のみ選択肢を追加する。
-	if ( $has_unset_industry ) {
-		$selected = ( isset( $s_industry ) && '__unset__' === $s_industry ) ? 'selected' : '';
-		echo '<option value="__unset__" ' . $selected . '>業種未設定</option>';
 	}
 	echo '</select>';
 	echo '</div>';
@@ -476,7 +476,7 @@ if ( count( $filtered_sites ) === 0 ) {
 		$active_conditions[] = 'テーマタイプ: ' . $s_theme_type;
 	}
 	if ( isset( $s_industry ) && '' !== $s_industry ) {
-		$active_conditions[] = '業種: ' . $s_industry;
+		$active_conditions[] = '業種: ' . ( '__unset__' === $s_industry ? '業種未設定' : $s_industry );
 	}
 	if ( ! empty( $s_license_type ) ) {
 		$active_conditions[] = 'ライセンス区分: ' . implode( ', ', $s_license_type );
