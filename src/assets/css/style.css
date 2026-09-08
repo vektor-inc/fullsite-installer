@@ -77,6 +77,9 @@ body.settings_page_vk-fullsite-installer {
             display: block;
             font-weight: 600;
         }
+        & > legend {
+            padding: 0;
+        }
 
         @media (max-width: 782px) {
             flex-basis: calc(50% - var(--vk-gap));
