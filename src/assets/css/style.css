@@ -48,7 +48,7 @@ body.settings_page_vk-fullsite-installer {
     & h3{
         margin-top: 0;
     }
-    & .button{
+    & input[type=submit].button{
         display: block;
         width: 100%;
         margin-left: auto;
@@ -58,6 +58,12 @@ body.settings_page_vk-fullsite-installer {
         font-size: 1rem;
         letter-spacing: .5em;
         text-align: center;
+    }
+    & a.button{
+        display: inline-block;
+        width: auto;
+        margin-top: 1em;
+        letter-spacing: normal;
     }
 }
 .vkfsi_search-content{
