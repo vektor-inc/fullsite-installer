@@ -72,6 +72,11 @@ body.settings_page_vk-fullsite-installer {
     gap: var(--vk-gap);
     & .vkfsi_search-item {
         flex-basis: calc(33.33% - var(--vk-gap));
+        & > legend,
+        & > label {
+            display: block;
+            font-weight: 600;
+        }
 
         @media (max-width: 782px) {
             flex-basis: calc(50% - var(--vk-gap));
