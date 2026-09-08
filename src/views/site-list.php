@@ -62,7 +62,8 @@ function vkfsi_search_filter( $site ) {
 
 	// 言語
 	if ( isset( $_POST[ 's-language' ] ) ) {
-		if ( $site[ 'language' ] !== $_POST[ 's-language' ] ) {
+		$lang = sanitize_text_field( wp_unslash( $_POST[ 's-language' ] ) );
+		if ( $site[ 'language' ] !== $lang ) {
 			return false;
 		}
 	}
@@ -114,7 +115,7 @@ function vkfsi_search_filter( $site ) {
 
 	// キーワード
 	if ( isset( $_POST[ 's-keyword' ] ) ) {
-		$input_keyword = sanitize_text_field( wp_unslash ( $_POST[ 's-keyword' ] ) );
+		$input_keyword = sanitize_text_field( wp_unslash( $_POST[ 's-keyword' ] ) );
 		$input_keyword = str_replace( '　', ' ', $input_keyword );
 		$keyword_array = explode( ' ', $input_keyword );
 		$match_counter = 0;
@@ -265,7 +266,6 @@ echo '<div class="vkfsi_search-form">';
 echo '<form method="post" action="">';
 wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce' );
 echo '<input type="hidden" name="s-search" value="on">';
-echo '<input type="hidden" name="vkfsi_is_search" value="1">';
 
 echo '<h3>サイト検索</h3>';
 echo '<div class="vkfsi_search-content">';
@@ -273,7 +273,7 @@ echo '<div class="vkfsi_search-content">';
 // デフォルトの言語選択肢
 $default_language = '';
 if ( isset( $_POST[ 's-language' ] ) ) {
-	$default_language = sanitize_text_field( wp_unslash ( $_POST[ 's-language' ] ) );
+	$default_language = sanitize_text_field( wp_unslash( $_POST[ 's-language' ] ) );
 } else {
 	$locale = get_locale();
 	if ( $locale !== 'ja' ) {
@@ -323,8 +323,8 @@ echo '</select>';
 echo '</div>';
 echo '</div>';
 
-// 検索フォーム - 業種（業種未設定サイトが存在する場合も含めて表示する）
-if ( count( $search_industry_array ) > 0 || $has_unset_industry ) {
+// 検索フォーム - 業種（業種が 1 件以上ある場合のみ表示。未設定選択肢は $has_unset_industry で制御）
+if ( count( $search_industry_array ) > 0 ) {
 	echo '<div class="vkfsi_search-item">';
 	echo '<label for="s-industry">業種</label>';
 	echo '<div class="vkfsi_input-wrap">';
@@ -394,7 +394,7 @@ echo '</div>';
 echo '<div class="vkfsi_search-item">';
 $keyword = '';
 if ( isset( $_POST[ 's-keyword' ] ) ) {
-	$keyword = sanitize_text_field( wp_unslash ( $_POST[ 's-keyword' ] ) );
+	$keyword = sanitize_text_field( wp_unslash( $_POST[ 's-keyword' ] ) );
 }
 echo '<label for="s-keyword">キーワード</label>';
 echo '<div class="vkfsi_input-wrap">';
@@ -409,7 +409,7 @@ echo '<div class="vkfsi_input-wrap">';
 echo '<select name="s-sort" id="s-sort">';
 echo '<option value="">指定なし</option>';
 
-$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 's-sort' ] ) ) : '';
+$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 's-sort' ] ) ) : '';
 foreach ( $sort_key_array as $sort_key => $sort_name ) {
 	$selected = '';
 	if ( $sort_key === $sort_value ) {
@@ -429,18 +429,14 @@ echo '</div>'; // vkfsi_search-content
 echo '<input type="submit" value="検索" class="button button-primary">';
 
 // POST なしで同ページへ遷移することで全条件をクリアする。
-$reset_url = add_query_arg(
-	'page',
-	sanitize_text_field( wp_unslash( $_GET['page'] ?? '' ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- ページスラッグの取得のみで書き込みは行わない。
-	admin_url( 'admin.php' )
-);
+$reset_url = menu_page_url( sanitize_text_field( wp_unslash( $_GET['page'] ?? '' ) ), false ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- ページスラッグの取得のみで書き込みは行わない。
 echo ' <a href="' . esc_url( $reset_url ) . '" class="button">検索条件をリセット</a>';
 
 echo '</form>';
 echo '</div>'; // vkfsi_search-form
 
 // 指定された site_code があれば、そのサイトまでスクロールさせる
-$vkfsi_code = isset( $_POST[ 'vkfsi_code' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 'vkfsi_code' ] ) ) : '';
+$vkfsi_code = isset( $_POST[ 'vkfsi_code' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'vkfsi_code' ] ) ) : '';
 ?>
 <script>
 	jQuery( function( $ ) {
@@ -476,7 +472,7 @@ if ( count( $filtered_sites ) === 0 ) {
 		$active_conditions[] = 'テーマタイプ: ' . $s_theme_type;
 	}
 	if ( isset( $s_industry ) && '' !== $s_industry ) {
-		$active_conditions[] = '業種: ' . ( '__unset__' === $s_industry ? '業種未設定' : $s_industry );
+		$active_conditions[] = '業種: ' . ( '__unset__' === $s_industry ? '未設定' : $s_industry );
 	}
 	if ( ! empty( $s_license_type ) ) {
 		$active_conditions[] = 'ライセンス区分: ' . implode( ', ', $s_license_type );
@@ -487,10 +483,6 @@ if ( count( $filtered_sites ) === 0 ) {
 	if ( isset( $keyword ) && '' !== $keyword ) {
 		$active_conditions[] = 'キーワード: ' . $keyword;
 	}
-	if ( isset( $_POST['s-language'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- 表示用途のみ。
-		$active_conditions[] = '言語: ' . sanitize_text_field( wp_unslash( $_POST['s-language'] ) );
-	}
-
 	echo '<div class="notice notice-info">';
 	echo '<p><strong>該当するサイトが見つかりませんでした。</strong></p>';
 	if ( ! empty( $active_conditions ) ) {
@@ -502,7 +494,7 @@ if ( count( $filtered_sites ) === 0 ) {
 	echo '<p>インストールするサイトを選択してください</p>';
 
 	// 表示順ソート
-	$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 's-sort' ] ) ) : '';
+	$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 's-sort' ] ) ) : '';
 	if ( $sort_value && isset( $sort_key_array[ $sort_value ] ) ) {
 		$sort_parts = explode( '.', $sort_value, 2 );
 		$sort_field = $sort_parts[0];
@@ -524,16 +516,16 @@ if ( count( $filtered_sites ) === 0 ) {
 }
 
 // 検索条件用 hidden タグ
-$search_hidden = '';
+$search_hidden = wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce', true, false );
 foreach ( $_POST as $key => $value ) {
 	if ( 0 === strpos( $key, 's-' ) ) {
 		if ( is_array( $value ) ) {
 			foreach ( $value as $v ) {
-				$v = sanitize_text_field( wp_unslash ( $v ) );
+				$v = sanitize_text_field( wp_unslash( $v ) );
 				$search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '[]" value="' . esc_attr( $v ) . '">';
 			}
 		} else {
-			$value = sanitize_text_field( wp_unslash ( $value ) );
+			$value = sanitize_text_field( wp_unslash( $value ) );
 			$search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '">';
 		}
 	}
@@ -589,11 +581,10 @@ foreach ( $filtered_sites as $site ) {
 
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">テーマタイプ</span></dt><dd>' . esc_html( $site[ 'theme_type' ] ). '</dd></dl>';
 
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site['industry'] ?: '未設定' ) . '</dd></dl>';
+
 	// Author の表示
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">Author</span></dt><dd>' . esc_html( $site[ 'author' ] ) . '</dd></dl>';
-
-	// 業種の表示（未設定時は空欄で行を残す）
-	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site[ 'industry' ] ?? '' ) . '</dd></dl>';
 
 	// Price
 	$price_data = vkfst_get_display_price_data( $site );

@@ -48,7 +48,7 @@ body.settings_page_vk-fullsite-installer {
     & h3{
         margin-top: 0;
     }
-    & .button{
+    & input[type=submit].button{
         display: block;
         width: 100%;
         margin-left: auto;
@@ -59,6 +59,12 @@ body.settings_page_vk-fullsite-installer {
         letter-spacing: .5em;
         text-align: center;
     }
+    & a.button{
+        display: inline-block;
+        width: auto;
+        margin-top: 1em;
+        letter-spacing: normal;
+    }
 }
 .vkfsi_search-content{
     display: flex;
@@ -66,6 +72,14 @@ body.settings_page_vk-fullsite-installer {
     gap: var(--vk-gap);
     & .vkfsi_search-item {
         flex-basis: calc(33.33% - var(--vk-gap));
+        & > fieldset > legend,
+        & > label {
+            display: block;
+            font-weight: 600;
+        }
+        & > fieldset > legend {
+            padding: 0;
+        }
 
         @media (max-width: 782px) {
             flex-basis: calc(50% - var(--vk-gap));
