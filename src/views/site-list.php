@@ -588,8 +588,7 @@ foreach ( $filtered_sites as $site ) {
 	// Author の表示
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">Author</span></dt><dd>' . esc_html( $site[ 'author' ] ) . '</dd></dl>';
 
-	// 業種の表示（未設定時は空欄で行を残す）
-	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site[ 'industry' ] ?? '' ) . '</dd></dl>';
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site['industry'] ?: '未設定' ) . '</dd></dl>';
 
 	// Price
 	$price_data = vkfst_get_display_price_data( $site );
