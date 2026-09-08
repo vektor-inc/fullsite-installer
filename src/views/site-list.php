@@ -524,7 +524,7 @@ if ( count( $filtered_sites ) === 0 ) {
 }
 
 // 検索条件用 hidden タグ
-$search_hidden = '';
+$search_hidden = wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce', true, false );
 foreach ( $_POST as $key => $value ) {
 	if ( 0 === strpos( $key, 's-' ) ) {
 		if ( is_array( $value ) ) {
