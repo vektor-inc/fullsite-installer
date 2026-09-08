@@ -472,7 +472,7 @@ if ( count( $filtered_sites ) === 0 ) {
 		$active_conditions[] = 'テーマタイプ: ' . $s_theme_type;
 	}
 	if ( isset( $s_industry ) && '' !== $s_industry ) {
-		$active_conditions[] = '業種: ' . ( '__unset__' === $s_industry ? '業種未設定' : $s_industry );
+		$active_conditions[] = '業種: ' . ( '__unset__' === $s_industry ? '未設定' : $s_industry );
 	}
 	if ( ! empty( $s_license_type ) ) {
 		$active_conditions[] = 'ライセンス区分: ' . implode( ', ', $s_license_type );
