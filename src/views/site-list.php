@@ -62,7 +62,8 @@ function vkfsi_search_filter( $site ) {
 
 	// 言語
 	if ( isset( $_POST[ 's-language' ] ) ) {
-		if ( $site[ 'language' ] !== $_POST[ 's-language' ] ) {
+		$lang = sanitize_text_field( wp_unslash( $_POST[ 's-language' ] ) );
+		if ( $site[ 'language' ] !== $lang ) {
 			return false;
 		}
 	}
@@ -265,7 +266,6 @@ echo '<div class="vkfsi_search-form">';
 echo '<form method="post" action="">';
 wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce' );
 echo '<input type="hidden" name="s-search" value="on">';
-echo '<input type="hidden" name="vkfsi_is_search" value="1">';
 
 echo '<h3>サイト検索</h3>';
 echo '<div class="vkfsi_search-content">';
@@ -429,11 +429,7 @@ echo '</div>'; // vkfsi_search-content
 echo '<input type="submit" value="検索" class="button button-primary">';
 
 // POST なしで同ページへ遷移することで全条件をクリアする。
-$reset_url = add_query_arg(
-	'page',
-	sanitize_text_field( wp_unslash( $_GET['page'] ?? '' ) ), // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- ページスラッグの取得のみで書き込みは行わない。
-	admin_url( 'admin.php' )
-);
+$reset_url = menu_page_url( sanitize_text_field( wp_unslash( $_GET['page'] ?? '' ) ), false ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- ページスラッグの取得のみで書き込みは行わない。
 echo ' <a href="' . esc_url( $reset_url ) . '" class="button">検索条件をリセット</a>';
 
 echo '</form>';
