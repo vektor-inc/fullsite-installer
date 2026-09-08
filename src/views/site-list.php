@@ -323,8 +323,8 @@ echo '</select>';
 echo '</div>';
 echo '</div>';
 
-// 検索フォーム - 業種（業種未設定サイトが存在する場合も含めて表示する）
-if ( count( $search_industry_array ) > 0 || $has_unset_industry ) {
+// 検索フォーム - 業種（業種が 1 件以上ある場合のみ表示。未設定選択肢は $has_unset_industry で制御）
+if ( count( $search_industry_array ) > 0 ) {
 	echo '<div class="vkfsi_search-item">';
 	echo '<label for="s-industry">業種</label>';
 	echo '<div class="vkfsi_input-wrap">';
