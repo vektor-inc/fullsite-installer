@@ -585,10 +585,10 @@ foreach ( $filtered_sites as $site ) {
 
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">テーマタイプ</span></dt><dd>' . esc_html( $site[ 'theme_type' ] ). '</dd></dl>';
 
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site['industry'] ?: '未設定' ) . '</dd></dl>';
+
 	// Author の表示
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">Author</span></dt><dd>' . esc_html( $site[ 'author' ] ) . '</dd></dl>';
-
-	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site['industry'] ?: '未設定' ) . '</dd></dl>';
 
 	// Price
 	$price_data = vkfst_get_display_price_data( $site );
