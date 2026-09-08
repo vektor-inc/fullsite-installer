@@ -483,10 +483,6 @@ if ( count( $filtered_sites ) === 0 ) {
 	if ( isset( $keyword ) && '' !== $keyword ) {
 		$active_conditions[] = 'キーワード: ' . $keyword;
 	}
-	if ( isset( $_POST['s-language'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- 表示用途のみ。
-		$active_conditions[] = '言語: ' . sanitize_text_field( wp_unslash( $_POST['s-language'] ) );
-	}
-
 	echo '<div class="notice notice-info">';
 	echo '<p><strong>該当するサイトが見つかりませんでした。</strong></p>';
 	if ( ! empty( $active_conditions ) ) {
