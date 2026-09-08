@@ -115,7 +115,7 @@ function vkfsi_search_filter( $site ) {
 
 	// キーワード
 	if ( isset( $_POST[ 's-keyword' ] ) ) {
-		$input_keyword = sanitize_text_field( wp_unslash ( $_POST[ 's-keyword' ] ) );
+		$input_keyword = sanitize_text_field( wp_unslash( $_POST[ 's-keyword' ] ) );
 		$input_keyword = str_replace( '　', ' ', $input_keyword );
 		$keyword_array = explode( ' ', $input_keyword );
 		$match_counter = 0;
@@ -273,7 +273,7 @@ echo '<div class="vkfsi_search-content">';
 // デフォルトの言語選択肢
 $default_language = '';
 if ( isset( $_POST[ 's-language' ] ) ) {
-	$default_language = sanitize_text_field( wp_unslash ( $_POST[ 's-language' ] ) );
+	$default_language = sanitize_text_field( wp_unslash( $_POST[ 's-language' ] ) );
 } else {
 	$locale = get_locale();
 	if ( $locale !== 'ja' ) {
@@ -394,7 +394,7 @@ echo '</div>';
 echo '<div class="vkfsi_search-item">';
 $keyword = '';
 if ( isset( $_POST[ 's-keyword' ] ) ) {
-	$keyword = sanitize_text_field( wp_unslash ( $_POST[ 's-keyword' ] ) );
+	$keyword = sanitize_text_field( wp_unslash( $_POST[ 's-keyword' ] ) );
 }
 echo '<label for="s-keyword">キーワード</label>';
 echo '<div class="vkfsi_input-wrap">';
@@ -409,7 +409,7 @@ echo '<div class="vkfsi_input-wrap">';
 echo '<select name="s-sort" id="s-sort">';
 echo '<option value="">指定なし</option>';
 
-$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 's-sort' ] ) ) : '';
+$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 's-sort' ] ) ) : '';
 foreach ( $sort_key_array as $sort_key => $sort_name ) {
 	$selected = '';
 	if ( $sort_key === $sort_value ) {
@@ -436,7 +436,7 @@ echo '</form>';
 echo '</div>'; // vkfsi_search-form
 
 // 指定された site_code があれば、そのサイトまでスクロールさせる
-$vkfsi_code = isset( $_POST[ 'vkfsi_code' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 'vkfsi_code' ] ) ) : '';
+$vkfsi_code = isset( $_POST[ 'vkfsi_code' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'vkfsi_code' ] ) ) : '';
 ?>
 <script>
 	jQuery( function( $ ) {
@@ -498,7 +498,7 @@ if ( count( $filtered_sites ) === 0 ) {
 	echo '<p>インストールするサイトを選択してください</p>';
 
 	// 表示順ソート
-	$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash ( $_POST[ 's-sort' ] ) ) : '';
+	$sort_value = isset( $_POST[ 's-sort' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 's-sort' ] ) ) : '';
 	if ( $sort_value && isset( $sort_key_array[ $sort_value ] ) ) {
 		$sort_parts = explode( '.', $sort_value, 2 );
 		$sort_field = $sort_parts[0];
@@ -525,11 +525,11 @@ foreach ( $_POST as $key => $value ) {
 	if ( 0 === strpos( $key, 's-' ) ) {
 		if ( is_array( $value ) ) {
 			foreach ( $value as $v ) {
-				$v = sanitize_text_field( wp_unslash ( $v ) );
+				$v = sanitize_text_field( wp_unslash( $v ) );
 				$search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '[]" value="' . esc_attr( $v ) . '">';
 			}
 		} else {
-			$value = sanitize_text_field( wp_unslash ( $value ) );
+			$value = sanitize_text_field( wp_unslash( $value ) );
 			$search_hidden .= '<input type="hidden" name="' . esc_attr( $key ) . '" value="' . esc_attr( $value ) . '">';
 		}
 	}
