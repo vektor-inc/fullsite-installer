@@ -60,9 +60,9 @@ body.settings_page_vk-fullsite-installer {
         text-align: center;
     }
     & a.button{
-        display: inline-block;
-        width: auto;
-        margin-top: 1em;
+        display: block;
+        width: fit-content;
+        margin: 1em auto 0;
         letter-spacing: normal;
     }
 }
