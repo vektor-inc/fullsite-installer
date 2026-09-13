@@ -60,14 +60,6 @@ function vkfsi_search_filter( $site ) {
 		return true;
 	}
 
-	// 言語
-	if ( isset( $_POST[ 's-language' ] ) ) {
-		$lang = sanitize_text_field( wp_unslash( $_POST[ 's-language' ] ) );
-		if ( $site[ 'language' ] !== $lang ) {
-			return false;
-		}
-	}
-
 	// テーマ
 	if ( isset( $_POST[ 's-theme' ] ) ) {
 		global $s_theme;
@@ -227,7 +219,6 @@ echo '</h1>';
 do_action( 'vkfsi_add_settings' );
 
 // 検索フォーム用に各値を取得
-$search_language_array = []; // 言語の配列
 $search_theme_array = []; // テーマ名の配列
 $search_theme_type_array = []; // テーマタイプの配列
 $search_license_type_array = []; // ライセンス区分の配列
@@ -237,7 +228,6 @@ $has_unset_industry = false; // 業種未設定のサイトが存在するか
 foreach ( $sites as $site ) {
 	$search_theme_array[] = $site[ 'theme' ];
 	$search_theme_type_array[] = $site[ 'theme_type' ];
-	$search_language_array[] = $site[ 'language' ];
 	$search_license_type_array[] = $site[ 'license_type' ];
 	$search_author_array[] = $site[ 'author' ];
 	if ( isset( $site[ 'industry' ] ) && ! empty( $site[ 'industry' ] ) ) {
@@ -252,8 +242,6 @@ $search_theme_array = array_unique( $search_theme_array );
 sort( $search_theme_array );
 $search_theme_type_array = array_unique( $search_theme_type_array );
 sort( $search_theme_type_array );
-$search_language_array = array_unique( $search_language_array );
-sort( $search_language_array );
 $search_license_type_array = array_unique( $search_license_type_array );
 sort( $search_license_type_array );
 $search_author_array = array_unique( $search_author_array );
@@ -269,18 +257,6 @@ echo '<input type="hidden" name="s-search" value="on">';
 
 echo '<h3>サイト検索</h3>';
 echo '<div class="vkfsi_search-content">';
-
-// デフォルトの言語選択肢
-$default_language = '';
-if ( isset( $_POST[ 's-language' ] ) ) {
-	$default_language = sanitize_text_field( wp_unslash( $_POST[ 's-language' ] ) );
-} else {
-	$locale = get_locale();
-	if ( $locale !== 'ja' ) {
-		$locale = 'en';
-	}
-	$default_language = $locale;
-}
 
 // 検索フォーム - テーマ
 echo '<div class="vkfsi_search-item">';
@@ -333,7 +309,7 @@ if ( count( $search_industry_array ) > 0 ) {
 	// 業種未設定サイトが 1 件以上ある場合のみ選択肢を追加する（「指定なし」の直後に配置）。
 	if ( $has_unset_industry ) {
 		$selected = ( isset( $s_industry ) && '__unset__' === $s_industry ) ? 'selected' : '';
-		echo '<option value="__unset__" ' . $selected . '>業種未設定</option>';
+		echo '<option value="__unset__" ' . $selected . '>未設定</option>';
 	}
 	foreach ( $search_industry_array as $industry ) {
 		if ( empty( $industry ) ) {
@@ -516,7 +492,7 @@ if ( count( $filtered_sites ) === 0 ) {
 }
 
 // 検索条件用 hidden タグ
-$search_hidden = wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce', true, false );
+$search_hidden = wp_nonce_field( 'vkfsi_search_action', 'vkfsi_search_nonce', false, false );
 foreach ( $_POST as $key => $value ) {
 	if ( 0 === strpos( $key, 's-' ) ) {
 		if ( is_array( $value ) ) {
@@ -581,7 +557,7 @@ foreach ( $filtered_sites as $site ) {
 
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">テーマタイプ</span></dt><dd>' . esc_html( $site[ 'theme_type' ] ). '</dd></dl>';
 
-	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site['industry'] ?: '未設定' ) . '</dd></dl>';
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( ( $site['industry'] ?? '' ) ?: '未設定' ) . '</dd></dl>';
 
 	// Author の表示
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">Author</span></dt><dd>' . esc_html( $site[ 'author' ] ) . '</dd></dl>';
