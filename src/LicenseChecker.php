@@ -13,16 +13,12 @@ class LicenseChecker {
 	private $site_code;
 
 	/**
-	 * Vektor Passport ライセンスキー
-	 * @var string
+	 * ライセンスキーの連想配列
+	 * API パラメータ名（api_param）をキーにして値を積む。
+	 * 製品が増えてもこのクラスを触らずに済むよう、個別プロパティではなく配列で持つ。
+	 * @var array
 	 */
-	private $passport_license_key;
-
-	/**
-	 * サイトライセンスキー
-	 * @var string
-	 */
-	private $site_license_key;
+	private $license_keys = array();
 
 	/**
 	 * ライセンス認証 URL
@@ -54,36 +50,44 @@ class LicenseChecker {
 	}
 
 	/**
-	 * Vektor Passport ライセンスキーをセット
-	 * @param string $license_key : ライセンスキー
+	 * ライセンスキーをセット
+	 *
+	 * $api_param は製品ごとに一意にすること。同じ $api_param で複数回呼ぶと、
+	 * 後から積んだ値で以前の値が黙って上書きされる（エラーにはならない）。
+	 * また 'site_code' は getData() が site_code の送信に使う予約済みのキー名のため、
+	 * $api_param に 'site_code' は使えない（使っても getData() 側で site_code の値に上書きされる）。
+	 *
+	 * @param string $api_param : ライセンス認証 API へ送るクエリパラメータ名（'site_code' は使用不可）
+	 * @param string $value     : ライセンスキーの値
 	 * @return void
 	 */
-	public function setPassportLicenseKey( $license_key ) {
-		$this->passport_license_key = $license_key;
-	}
-
-	/**
-	 * サイトライセンスキーをセット
-	 * @param string $license_key : ライセンスキー
-	 * @return void
-	 */
-	public function setSiteLicenseKey( $license_key ) {
-		$this->site_license_key = $license_key;
+	public function setLicenseKey( $api_param, $value ) {
+		$this->license_keys[ $api_param ] = $value;
 	}
 
 	/**
 	 * ライセンス認証状況を UpdateChecker に問い合わせ
-	 * @return string
+	 * @return array|null 認証結果の連想配列。リクエスト失敗時や不正なレスポンス時は null
 	 */
 	public function getData() {
 
 		$this->api_url = apply_filters( 'vkfsibt_license_check_url', $this->api_url );
+		// R2 の対応: site_code をクエリの先頭位置に固定したまま、api_param に 'site_code' が
+		// 使われた場合でも実値が必ず勝つようにする。
+		// 先頭の array( 'site_code' => '' ) で site_code のキー位置を先頭に確保しておき、
+		// 末尾の array( 'site_code' => $this->site_code ) の実値で上書きする
+		// （array_merge は同じキーが複数あると後の値で上書きするが、キーの並び順は
+		// 最初にそのキーが現れた位置のまま変わらないため、この書き方で
+		// 「先頭固定 + 実値で上書き」の両方を同時に満たせる）。
+		// main では site_code がクエリの先頭にあり、これを変えてしまうと、
+		// API の手前に URL 完全一致のキャッシュ（オブジェクトキャッシュ・CDN・プロキシ）が
+		// ある場合に main とは別のキャッシュキーとして扱われてしまう
 		$api_url = add_query_arg(
-			[
-				'site_code'             => $this->site_code,
-				'passport_license_key'  => $this->passport_license_key,
-				'site_license_key'      => $this->site_license_key,
-			],
+			array_merge(
+				array( 'site_code' => '' ),
+				$this->license_keys,
+				array( 'site_code' => $this->site_code )
+			),
 			$this->api_url
 		);
 

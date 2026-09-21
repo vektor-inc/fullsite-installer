@@ -532,26 +532,13 @@ foreach ( $filtered_sites as $site ) {
 	// サイト名の表示
 	echo '<h3>' . esc_html( $site[ 'site_name' ] ) . '</h3>';
 
-	$license_type = '';
-	switch ( $site['license_type'] ) {
-		case VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE:
-			$license_type = '無料';
-			break;
-		case VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT:
-			$license_type = 'Vektor Passport';
-			break;
-		case VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE:
-			$license_type = 'Vektor Passport + サイトライセンス';
-			break;
-		case VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE:
-			$license_type = 'サイトライセンス';
-			break;
-		default:
-			$license_type = '';
-		break;
-	}
+	// 表示名は self::$license_type_name_array（Installer.php）の対応表を参照する
+	// 表示名の追加はそちらの配列に足すだけでよく、ここでは二重管理しない
+	$license_type = isset( self::$license_type_name_array[ $site[ 'license_type' ] ] )
+		? self::$license_type_name_array[ $site[ 'license_type' ] ]
+		: '';
 
-	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">ライセンスタイプ</span></dt><dd>' . $license_type . '</dd></dl>';
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">ライセンスタイプ</span></dt><dd>' . esc_html( $license_type ) . '</dd></dl>';
 	// 使用テーマの表示
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">使用テーマ</span></dt><dd>' . esc_html( $site[ 'theme' ] ). '</dd></dl>';
 
@@ -566,11 +553,18 @@ foreach ( $filtered_sites as $site ) {
 	$price_data = vkfst_get_display_price_data( $site );
 	$price_html = '<div class="vkfsi_price-outer">';
 	$price_html .= vkfst_get_display_price_html( $price_data );
-	if (
-		VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE === $site[ 'license_type' ]
-		|| VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT === $site[ 'license_type' ]
-		) {
-		$price_html .= '<span class="vkfsi_price_passport">※ 別途 <a href="https://vws.vektor-inc.co.jp/vektor-passport" target="_blank">Vektor Passport</a> が必要です</span>';
+
+	// 「別途製品が必要です」の注記を、この license_type に該当する定義配列の price_note からすべて出す
+	foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+		if ( empty( $license_key_field[ 'price_note' ] ) ) {
+			continue;
+		}
+		if ( in_array( $site[ 'license_type' ], $license_key_field[ 'license_types' ], true ) ) {
+			// price_note は定義配列側の固定文字列だが、$license_key_fields は他の
+			// プラグイン・テーマからも書き換えられうる static プロパティのため、
+			// 出力時にも wp_kses_post() を通して任意 HTML の出口にならないようにする
+			$price_html .= wp_kses_post( $license_key_field[ 'price_note' ] );
+		}
 	}
 	$price_html .= '</div>'; // vkfsi_price-outer
 
@@ -629,57 +623,39 @@ foreach ( $filtered_sites as $site ) {
 		}
 	}
 
-	// Vektor Passport ライセンスキーの入力欄
-	if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE === $site[ 'license_type' ]
-		|| VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT === $site[ 'license_type' ] ) {
+	// 各ライセンスキーの入力欄
+	// self::$license_key_fields に定義した区分ぶんだけループする。製品が増えても定義配列に足すだけでよい
+	foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+		// このサイトの license_type に該当しない入力欄は出さない
+		if ( ! in_array( $site[ 'license_type' ], $license_key_field[ 'license_types' ], true ) ) {
+			continue;
+		}
 
-		echo '<label for="license_key_vektor_passport">Vektor Passport ライセンスキー</label>';
+		// 保存ボタンを押したサイトコードと同じ場合のみ、入力値・エラーを表示する
+		$is_current_site = ( $site_code === $site[ 'site_code' ] );
+		$input_value      = $is_current_site ? $license_keys[ $slot ] : '';
+		$has_error        = $is_current_site && ! empty( $error_flags[ $slot ] );
+
+		// この画面はデモサイトごとにカードが繰り返されるため、id / for はサイトコードを含めて一意にする
+		$field_id = $license_key_field[ 'field' ] . '-' . $site[ 'site_code' ];
+		$error_id = $field_id . '-error';
+
+		echo '<label for="' . esc_attr( $field_id ) . '">' . esc_html( $license_key_field[ 'label' ] ) . '</label>';
 		echo '<div class="vkfsi_license-form">';
 
 		// エラーメッセージを表示
-		if ( $error_flag_passport && $site_code === $site[ 'site_code' ]) {
-			echo '<div class="vkfsi_error">Vektor Passport ライセンスキーが間違っています。</div>';
+		if ( $has_error ) {
+			echo '<div class="vkfsi_error" id="' . esc_attr( $error_id ) . '">' . esc_html( $license_key_field[ 'error_message' ] ) . '</div>';
 		}
 
-		// 保存ボタンを押したサイトコードと同じなら、
-		// Vektor Passport ライセンスキーを表示する
-		if ( $site_code === $site[ 'site_code' ] ) {
-			echo '<input type="password" name="license_key_vektor_passport" value="' . esc_attr( $license_key_passport ) . '">';
-		} else {
-			echo '<input type="password" name="license_key_vektor_passport" value="">';
-		}
-		submit_button( '保存', 'primary', 'save_license_key_vektor_passport' );
+		// エラーが出ているときだけ aria-describedby で入力欄とエラーメッセージを関連付ける
+		$aria_describedby = $has_error ? ' aria-describedby="' . esc_attr( $error_id ) . '"' : '';
+		echo '<input type="password" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $license_key_field[ 'field' ] ) . '" value="' . esc_attr( $input_value ) . '"' . $aria_describedby . '>';
+		submit_button( '保存', 'primary', $license_key_field[ 'save_button' ] );
 
-		// 購入ボタン
-		echo '<a href="' . PASSPORT_PURCHASE_URL . '" target="_blank">';
-		echo '<button type="button" class="button button-primary">購入</button>';
-		echo '</a>';
-		echo '</div>';
-	}
-
-	// サイトライセンスキーの入力欄
-	if ( VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE === $site[ 'license_type' ]
-		|| VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE === $site[ 'license_type' ] ) {
-
-		echo '<label for="license_key_site">サイト ライセンスキー</label>';
-		echo '<div class="vkfsi_license-form">';
-
-		// エラーメッセージを表示
-		if ( $error_flag_site && $site_code === $site[ 'site_code' ] ) {
-			echo '<div class="vkfsi_error">サイトライセンスキーが間違っています。</div>';
-		}
-
-		// 保存ボタンを押したサイトコードと同じなら、
-		// サイトライセンスキーを表示する
-		if ( $site_code === $site[ 'site_code' ] ) {
-			echo '<input type="password" name="license_key_site" value="' . esc_attr( $license_key_site ) . '">';
-		} else {
-			echo '<input type="password" name="license_key_site" value="">';
-		}
-		submit_button( '保存', 'primary', 'save_license_key_site' );
-
-		// 購入ボタン
-		echo '<a href="' . esc_url( $site['shop-item' ][ 'buy-link' ] ). '" target="_blank">';
+		// 購入ボタン。purchase_url が無ければデモサイトごとの購入リンクを使う
+		$buy_url = ! empty( $license_key_field[ 'purchase_url' ] ) ? $license_key_field[ 'purchase_url' ] : ( $site[ 'shop-item' ][ 'buy-link' ] ?? '' );
+		echo '<a href="' . esc_url( $buy_url ) . '" target="_blank">';
 		echo '<button type="button" class="button button-primary">購入</button>';
 		echo '</a>';
 		echo '</div>';
