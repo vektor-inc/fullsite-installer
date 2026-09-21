@@ -72,12 +72,21 @@ class LicenseChecker {
 	public function getData() {
 
 		$this->api_url = apply_filters( 'vkfsibt_license_check_url', $this->api_url );
-		// license_keys → site_code の順で merge し、api_param に 'site_code' が使われていても
-		// site_code の値が必ず勝つようにする（後の配列の値で上書きされる array_merge の仕様を利用）
+		// R2 の対応: site_code をクエリの先頭位置に固定したまま、api_param に 'site_code' が
+		// 使われた場合でも実値が必ず勝つようにする。
+		// 先頭の array( 'site_code' => '' ) で site_code のキー位置を先頭に確保しておき、
+		// 末尾の array( 'site_code' => $this->site_code ) の実値で上書きする
+		// （array_merge は同じキーが複数あると後の値で上書きするが、キーの並び順は
+		// 最初にそのキーが現れた位置のまま変わらないため、この書き方で
+		// 「先頭固定 + 実値で上書き」の両方を同時に満たせる）。
+		// main では site_code がクエリの先頭にあり、これを変えてしまうと、
+		// API の手前に URL 完全一致のキャッシュ（オブジェクトキャッシュ・CDN・プロキシ）が
+		// ある場合に main とは別のキャッシュキーとして扱われてしまう
 		$api_url = add_query_arg(
 			array_merge(
+				array( 'site_code' => '' ),
 				$this->license_keys,
-				[ 'site_code' => $this->site_code ]
+				array( 'site_code' => $this->site_code )
 			),
 			$this->api_url
 		);

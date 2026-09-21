@@ -71,7 +71,14 @@ class Installer {
 	 * - purchase_url  : 購入ボタンの遷移先。null の場合はデモサイトごとの購入リンク（shop-item.buy-link）を使う
 	 * - price_note    : 販売価格の注記に足す文言（HTML 可・不要な区分は空文字列）
 	 * - kind          : 認証結果の扱い方の区分。'product'（製品ライセンス。サイトライセンスが未認証でも単独で使える）
-	 *                   または 'site'（サイトライセンス）
+	 *                   または 'site'（サイトライセンス）。
+	 *                   注意: 認証結果の status（success_passport / success_product）は製品同士を区別しない。
+	 *                   そのため、同一区分（license_types の1つの値）に kind = 'product' のスロットを
+	 *                   2つ以上該当させる構成にする場合は、API 側が「どの api_param が成功したか」の
+	 *                   一覧を返す形に変更してから行うこと。変更せずに追加すると、
+	 *                   displaySiteListPage() 側は「どちらが通ったか判断できない」として
+	 *                   該当する製品キーをまとめてクリアする（フェイルクローズ）ため、
+	 *                   認証が通ったはずのキーまで毎回消える不具合になる
 	 * - key_options   : インポート後にライセンスキーを保存するオプション名の一覧。
 	 *                   文字列ならそのオプションへ直接 update_option() する。
 	 *                   array( 'option' => オプション名, 'sub_key' => 配列内のキー名 ) の形なら、
@@ -834,8 +841,13 @@ class Installer {
 		$sites_json = wp_remote_retrieve_body( $response );
 
 		// JSON デコード
+		// json_last_error() は構文エラーしか見ないため、API が null や 123 のような
+		// 有効なスカラー JSON を返した場合は $sites が配列にならない。
+		// この後 findLicenseTypeBySiteCode() や site-list.php で foreach ( $sites as $site ) するため、
+		// ここで配列かどうかもあわせて確認しておく（is_array を関数側だけに置くと、
+		// 同じ $sites を受け取る他の箇所を守れない）
 		$sites = json_decode( $sites_json, true );
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
+		if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $sites ) ) {
 			echo '<div class="notice notice-error is-dismissible"><p>sites.json ファイルの読み込みに失敗しました。</p></div>';
 			return;
 		}
@@ -898,76 +910,104 @@ class Installer {
 			// 選択中のサイトの区分を、一覧取得済みの $sites から引く
 			$selected_license_type = self::findLicenseTypeBySiteCode( $sites, $site_code );
 
-			// ライセンス認証 URL
-			$license_check_url = apply_filters( 'vkfsi_license_check_url', LICENSE_CHECK_API_URL );
+			// R5 の対応: 画面の描画と送信の間に一覧から該当サイトが消えた等で、
+			// サイトコードがどのサイトにも一致しない場合（$selected_license_type が空文字のまま）。
+			// この場合は入力したキーがすべて意味を持たないため、認証 API を呼ばずに通知だけ出す。
+			// return はせず、後続の一覧表示は行う（利用者が別のサイトを選び直せるようにするため）
+			if ( '' === $selected_license_type ) {
+				echo '<div class="notice notice-error is-dismissible"><p>対象のデモサイトが見つかりませんでした。画面を再読み込みしてやり直してください。</p></div>';
+			} else {
 
-			// 認証クラスの初期化
-			$license_checker = LicenseChecker::getInstance();
-			$license_checker->setApiUrl( $license_check_url );
-			$license_checker->setSiteCode( $site_code );
+				// ライセンス認証 URL
+				$license_check_url = apply_filters( 'vkfsi_license_check_url', LICENSE_CHECK_API_URL );
 
-			// 各ライセンスキーの入力値を取得し、認証クラスへセットする
-			foreach ( self::$license_key_fields as $slot => $license_key_field ) {
-				// 選択中のサイトの区分に、このスロットが該当するか
-				$is_applicable = in_array( $selected_license_type, $license_key_field[ 'license_types' ], true );
+				// 認証クラスの初期化
+				$license_checker = LicenseChecker::getInstance();
+				$license_checker->setApiUrl( $license_check_url );
+				$license_checker->setSiteCode( $site_code );
 
-				// 該当するスロットだけ $_POST から読む。
-				// 該当しない（＝画面に出ていない）入力欄に POST で値を足されても、認証対象にしない
-				if ( $is_applicable && isset( $_POST[ $license_key_field[ 'field' ] ] ) ) {
-					$license_keys[ $slot ] = sanitize_text_field( wp_unslash( $_POST[ $license_key_field[ 'field' ] ] ) );
+				// 各ライセンスキーの入力値を取得し、認証クラスへセットする
+				foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+					// 選択中のサイトの区分に、このスロットが該当するか
+					$is_applicable = in_array( $selected_license_type, $license_key_field[ 'license_types' ], true );
+
+					// 該当するスロットだけ $_POST から読む。
+					// 該当しない（＝画面に出ていない）入力欄に POST で値を足されても、認証対象にしない
+					if ( $is_applicable && isset( $_POST[ $license_key_field[ 'field' ] ] ) ) {
+						$license_keys[ $slot ] = sanitize_text_field( wp_unslash( $_POST[ $license_key_field[ 'field' ] ] ) );
+					}
+
+					// B の対応: send_always なスロット（既存の passport / site）は常に送り、
+					// それ以外（booking_manager_pro 等）は選択中の区分に該当するときだけ送る
+					if ( $license_key_field[ 'send_always' ] || $is_applicable ) {
+						$license_checker->setLicenseKey( $license_key_field[ 'api_param' ], $license_keys[ $slot ] );
+					}
 				}
 
-				// B の対応: send_always なスロット（既存の passport / site）は常に送り、
-				// それ以外（booking_manager_pro 等）は選択中の区分に該当するときだけ送る
-				if ( $license_key_field[ 'send_always' ] || $is_applicable ) {
-					$license_checker->setLicenseKey( $license_key_field[ 'api_param' ], $license_keys[ $slot ] );
-				}
-			}
+				// 認証処理
+				$result = $license_checker->getData();
 
-			// 認証処理
-			$result = $license_checker->getData();
+				// 認証結果が返ってきた場合
+				if ( $result ) {
+					// 認証結果が失敗した場合、ライセンスキーはすべてクリアする
+					if ( 'fail' == $result[ 'status' ] ) {
+						foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+							$license_keys[ $slot ] = '';
+						}
 
-			// 認証結果が返ってきた場合
-			if ( $result ) {
-				// 認証結果が失敗した場合、ライセンスキーはすべてクリアする
-				if ( 'fail' == $result[ 'status' ] ) {
+					// サイトライセンスキーだけ認証成功の場合、製品ライセンスキーをクリアする
+					// （選択中のサイトの区分に該当するスロットのみ対象。該当しないスロットはそもそも空文字のまま）
+					} else if ( 'success_site' == $result[ 'status' ] ) {
+						foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+							if ( 'product' === $license_key_field[ 'kind' ]
+								&& in_array( $selected_license_type, $license_key_field[ 'license_types' ], true ) ) {
+								$license_keys[ $slot ] = '';
+							}
+						}
+
+					// 製品ライセンスキー（Vektor Passport または VK Booking Manager Pro 等）だけ
+					// 認証成功の場合、サイトライセンスキーをクリアする
+					// （選択中のサイトの区分に該当するスロットのみ対象）
+					} else if ( in_array( $result[ 'status' ], array( 'success_passport', 'success_product' ), true ) ) {
+						foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+							if ( 'site' === $license_key_field[ 'kind' ]
+								&& in_array( $selected_license_type, $license_key_field[ 'license_types' ], true ) ) {
+								$license_keys[ $slot ] = '';
+							}
+						}
+
+						// R4 の対応: status（success_passport / success_product）は製品同士を区別しない。
+						// 選択中の区分に該当する kind = 'product' のスロットを数え、
+						// 2つ以上あればどちらが認証を通ったのか判断できないため、
+						// 未認証のキーを残すより安全側に倒して該当する製品キーもまとめてクリアする。
+						// 該当が1つだけなら、上の分岐と合わせて従来どおり
+						// 「製品キーは残し、サイト系だけクリア」の挙動になる
+						$applicable_product_slots = array();
+						foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+							if ( 'product' === $license_key_field[ 'kind' ]
+								&& in_array( $selected_license_type, $license_key_field[ 'license_types' ], true ) ) {
+								$applicable_product_slots[] = $slot;
+							}
+						}
+						if ( count( $applicable_product_slots ) >= 2 ) {
+							foreach ( $applicable_product_slots as $slot ) {
+								$license_keys[ $slot ] = '';
+							}
+						}
+					}
+
+					// データダウンロード URL
+					// 認証不可なら空文字が入ってくる
+					$data_url = $result[ 'data_url' ];
+
+				// 認証結果が返ってこない場合
+				} else {
+					// 入力値はすべてクリアする
 					foreach ( self::$license_key_fields as $slot => $license_key_field ) {
 						$license_keys[ $slot ] = '';
 					}
-
-				// サイトライセンスキーだけ認証成功の場合、製品ライセンスキーをクリアする
-				// （選択中のサイトの区分に該当するスロットのみ対象。該当しないスロットはそもそも空文字のまま）
-				} else if ( 'success_site' == $result[ 'status' ] ) {
-					foreach ( self::$license_key_fields as $slot => $license_key_field ) {
-						if ( 'product' === $license_key_field[ 'kind' ]
-							&& in_array( $selected_license_type, $license_key_field[ 'license_types' ], true ) ) {
-							$license_keys[ $slot ] = '';
-						}
-					}
-
-				// 製品ライセンスキー（Vektor Passport または VK Booking Manager Pro 等）だけ
-				// 認証成功の場合、サイトライセンスキーをクリアする
-				// （選択中のサイトの区分に該当するスロットのみ対象）
-				} else if ( in_array( $result[ 'status' ], array( 'success_passport', 'success_product' ), true ) ) {
-					foreach ( self::$license_key_fields as $slot => $license_key_field ) {
-						if ( 'site' === $license_key_field[ 'kind' ]
-							&& in_array( $selected_license_type, $license_key_field[ 'license_types' ], true ) ) {
-							$license_keys[ $slot ] = '';
-						}
-					}
+					$data_url = '';
 				}
-
-				// データダウンロード URL
-				// 認証不可なら空文字が入ってくる
-				$data_url = $result[ 'data_url' ];
-
-			// 認証結果が返ってこない場合
-			} else {
-				// 入力値はすべてクリアする
-				foreach ( self::$license_key_fields as $slot => $license_key_field ) {
-					$license_keys[ $slot ] = '';
-				}
-				$data_url = '';
 			}
 		}
 

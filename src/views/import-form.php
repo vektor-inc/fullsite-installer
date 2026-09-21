@@ -56,8 +56,8 @@ echo '</style>';
 	<h2>インポート設定</h2>
 	<form method="post" action="">
 		<?php wp_nonce_field( 'vkfsi_start_import', 'vkfsi_import_nonce' ); ?>
-		<input type="hidden" name="vkfsi_code" value="<?php echo esc_attr( $_POST[ 'vkfsi_code' ] ); ?>">
-		<input type="hidden" name="vkfsi_data_url" value="<?php echo esc_url( $_POST[ 'vkfsi_data_url' ] ); ?>">
+		<input type="hidden" name="vkfsi_code" value="<?php echo esc_attr( isset( $_POST[ 'vkfsi_code' ] ) ? wp_unslash( $_POST[ 'vkfsi_code' ] ) : '' ); ?>">
+		<input type="hidden" name="vkfsi_data_url" value="<?php echo esc_url( isset( $_POST[ 'vkfsi_data_url' ] ) ? wp_unslash( $_POST[ 'vkfsi_data_url' ] ) : '' ); ?>">
 		<?php
 		// 各製品のライセンスキーを、次のインポート処理（Installer::importSite()）へ引き継ぐための隠しフィールド。
 		// self::$license_key_fields のうち、インポート後に保存先（key_options）を持つ区分のみ引き継ぐ
@@ -65,6 +65,16 @@ echo '</style>';
 		// 隠しフィールド名は 'vkfsi_' . field の規則で決める。
 		// 既存の Vektor Passport 用フィールド名 vkfsi_license_key_vektor_passport は
 		// この規則のまま維持しており、保存済みの挙動を変えていない。
+		//
+		// R3 の対応（据え置き）: このループは保存先（key_options）を持つスロットを全部回すだけで、
+		// 選択中サイトの区分（license_type）で絞っていない。
+		// 保存処理側（Installer::displaySiteListPage()）は選択中の区分に該当するスロットのみを
+		// 対象にしているため、「どのスロットを扱うか」の判断がこのファイルと保存処理側の2箇所に
+		// 分かれている。ここを絞るには一覧データ（sites.json）の再取得が必要になり、外部リクエストが
+		// 1回増えるため、この PR では絞っていない（main でも同様に $_POST を素通しする設計であり、
+		// 新規に開いた穴ではない）。
+		// 将来どちらか片方だけを直すと2箇所の判断基準がずれる事故につながるため、
+		// 修正する際は必ず両方をあわせて見直すこと。
 		foreach ( self::$license_key_fields as $slot => $license_key_field ) {
 			if ( empty( $license_key_field[ 'key_options' ] ) ) {
 				continue;
