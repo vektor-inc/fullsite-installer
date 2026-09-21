@@ -847,7 +847,12 @@ class Installer {
 		// json_last_error() は構文エラーしか見ないため、API が null や 123 のような
 		// 有効なスカラー JSON を返した場合は $sites が配列にならない
 		$sites = json_decode( $sites_json, true );
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
+
+		// ここでの配列チェックは、この後の apply_filters( 'vkfsi_sites', $sites ) の
+		// コールバックに配列以外を渡さないため。フィルタへ渡す値の型はフィルタを
+		// 呼び出す側（ここ）の責務であり、フィルタを実装する側に配列以外への
+		// 防御を強いるのは筋が違うため、呼び出し前のこの位置で確認する
+		if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $sites ) ) {
 			echo '<div class="notice notice-error is-dismissible"><p>sites.json ファイルの読み込みに失敗しました。</p></div>';
 			return;
 		}
@@ -855,12 +860,9 @@ class Installer {
 		// sites.json ファイルの内容をフィルタリング
 		$sites = apply_filters( 'vkfsi_sites', $sites );
 
-		// 配列かどうかの確認は、フィルタ適用の直後（ここ）で行う。
-		// デコード直後で確認しても、その後の apply_filters( 'vkfsi_sites', ... ) が
-		// 配列以外を返す経路までは塞げないため、フィルタが配列以外を返す場合も含めて
-		// この1か所で確認している。この後 findLicenseTypeBySiteCode() や site-list.php で
-		// foreach ( $sites as $site ) するため、$sites を使う直前のこの位置で確認することで、
-		// デコード直後・フィルタ後のどちらの経路も、この1か所で確実に守れる
+		// ここでの配列チェックは、フィルタが配列以外を返した場合に、この後の
+		// foreach ( $sites as $site )（findLicenseTypeBySiteCode() や site-list.php 内）を
+		// 守るため
 		if ( ! is_array( $sites ) ) {
 			echo '<div class="notice notice-error is-dismissible"><p>sites.json ファイルの読み込みに失敗しました。</p></div>';
 			return;
