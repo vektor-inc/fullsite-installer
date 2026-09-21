@@ -13,16 +13,12 @@ class LicenseChecker {
 	private $site_code;
 
 	/**
-	 * Vektor Passport ライセンスキー
-	 * @var string
+	 * ライセンスキーの連想配列
+	 * API パラメータ名（api_param）をキーにして値を積む。
+	 * 製品が増えてもこのクラスを触らずに済むよう、個別プロパティではなく配列で持つ。
+	 * @var array
 	 */
-	private $passport_license_key;
-
-	/**
-	 * サイトライセンスキー
-	 * @var string
-	 */
-	private $site_license_key;
+	private $license_keys = array();
 
 	/**
 	 * ライセンス認証 URL
@@ -54,21 +50,13 @@ class LicenseChecker {
 	}
 
 	/**
-	 * Vektor Passport ライセンスキーをセット
-	 * @param string $license_key : ライセンスキー
+	 * ライセンスキーをセット
+	 * @param string $api_param : ライセンス認証 API へ送るクエリパラメータ名
+	 * @param string $value     : ライセンスキーの値
 	 * @return void
 	 */
-	public function setPassportLicenseKey( $license_key ) {
-		$this->passport_license_key = $license_key;
-	}
-
-	/**
-	 * サイトライセンスキーをセット
-	 * @param string $license_key : ライセンスキー
-	 * @return void
-	 */
-	public function setSiteLicenseKey( $license_key ) {
-		$this->site_license_key = $license_key;
+	public function setLicenseKey( $api_param, $value ) {
+		$this->license_keys[ $api_param ] = $value;
 	}
 
 	/**
@@ -79,11 +67,10 @@ class LicenseChecker {
 
 		$this->api_url = apply_filters( 'vkfsibt_license_check_url', $this->api_url );
 		$api_url = add_query_arg(
-			[
-				'site_code'             => $this->site_code,
-				'passport_license_key'  => $this->passport_license_key,
-				'site_license_key'      => $this->site_license_key,
-			],
+			array_merge(
+				[ 'site_code' => $this->site_code ],
+				$this->license_keys
+			),
 			$this->api_url
 		);
 

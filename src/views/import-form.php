@@ -1,11 +1,5 @@
 <?php
 
-// パスポートライセンスキー
-$license_key_passport = '';
-if ( isset( $_POST[ 'license_key_vektor_passport' ] ) ) {
-	$license_key_passport = sanitize_text_field( $_POST[ 'license_key_vektor_passport' ] );
-}
-
 // カレントユーザーの情報を取得
 $current_user = wp_get_current_user();
 
@@ -64,7 +58,24 @@ echo '</style>';
 		<?php wp_nonce_field( 'vkfsi_start_import', 'vkfsi_import_nonce' ); ?>
 		<input type="hidden" name="vkfsi_code" value="<?php echo esc_attr( $_POST[ 'vkfsi_code' ] ); ?>">
 		<input type="hidden" name="vkfsi_data_url" value="<?php echo esc_url( $_POST[ 'vkfsi_data_url' ] ); ?>">
-		<input type="hidden" name="vkfsi_license_key_vektor_passport" value="<?php echo esc_attr( $license_key_passport ); ?>">
+		<?php
+		// 各製品のライセンスキーを、次のインポート処理（Installer::importSite()）へ引き継ぐための隠しフィールド。
+		// self::$license_key_fields のうち、インポート後に保存先（key_options）を持つ区分のみ引き継ぐ
+		// （サイトライセンスキーのようにインポート後の保存先が無い区分は不要）。
+		// 隠しフィールド名は 'vkfsi_' . field の規則で決める。
+		// 既存の Vektor Passport 用フィールド名 vkfsi_license_key_vektor_passport は
+		// この規則のまま維持しており、保存済みの挙動を変えていない。
+		foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+			if ( empty( $license_key_field[ 'key_options' ] ) ) {
+				continue;
+			}
+			$license_key_value = isset( $_POST[ $license_key_field[ 'field' ] ] )
+				? sanitize_text_field( $_POST[ $license_key_field[ 'field' ] ] )
+				: '';
+			$hidden_field_name = 'vkfsi_' . $license_key_field[ 'field' ];
+			echo '<input type="hidden" name="' . esc_attr( $hidden_field_name ) . '" value="' . esc_attr( $license_key_value ) . '">';
+		}
+		?>
 		<table class="form-table">
 			<tr>
 				<th scope="row"><label for="content_user_id">コンテンツの所有者 <span class="description">(必須)</span></label></th>

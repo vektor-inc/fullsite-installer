@@ -21,11 +21,16 @@ define( 'LICENSE_CHECK_API_URL', 'https://vk-fullsite-installer.com/wp-json/vkfs
 // Vektor Passport の購入 URL
 define( 'PASSPORT_PURCHASE_URL', 'https://vws.vektor-inc.co.jp/product/vektor-passport-1y' );
 
+// VK Booking Manager Pro の購入 URL
+define( 'BOOKING_MANAGER_PRO_PURCHASE_URL', 'https://vws.vektor-inc.co.jp/product/vk-booking-manager-pro' );
+
 // sites.json の license_type の種類
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE', 'free' );
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT', 'passport' );
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE', 'site' );
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE', 'passport_and_site' );
+define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO', 'booking_manager_pro' );
+define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO_AND_SITE', 'booking_manager_pro_and_site' );
 
 use VektorInc\FullSiteInstaller\LicenseChecker;
 
@@ -45,7 +50,95 @@ class Installer {
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT => 'Vektor Passport',
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE => 'サイトライセンス',
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE => 'Vektor Passport + サイトライセンス',
+		VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO => 'VK Booking Manager Pro',
+		VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO_AND_SITE => 'VK Booking Manager Pro + サイトライセンス',
 	];
+
+	/**
+	 * ライセンスキー入力欄の定義配列
+	 *
+	 * デモサイト一覧画面のライセンスキー入力欄、インポート後の保存処理、
+	 * ライセンス認証 API への送信を、すべてこの配列からループで組み立てる。
+	 * 新しい製品のライセンスキーに対応する場合は、ここへ1ブロック追加するだけでよい。
+	 *
+	 * 各要素の意味:
+	 * - label         : 入力欄に表示するラベル文言
+	 * - field         : $_POST のフィールド名（既存の入力値との互換のため、既存名は変更しない）
+	 * - save_button   : 保存ボタンの name 属性（既存名は変更しない）
+	 * - api_param     : ライセンス認証 API へ送るクエリパラメータ名（既存名は変更しない）
+	 * - error_message : 認証エラー時に表示するメッセージ
+	 * - license_types : この入力欄を表示する license_type（サイトの区分）の一覧
+	 * - purchase_url  : 購入ボタンの遷移先。null の場合はデモサイトごとの購入リンク（shop-item.buy-link）を使う
+	 * - price_note    : 販売価格の注記に足す文言（HTML 可・不要な区分は空文字列）
+	 * - kind          : 認証結果の扱い方の区分。'product'（製品ライセンス。サイトライセンスが未認証でも単独で使える）
+	 *                   または 'site'（サイトライセンス）
+	 * - key_options   : インポート後にライセンスキーを保存するオプション名の一覧。
+	 *                   文字列ならそのオプションへ直接 update_option() する。
+	 *                   array( 'option' => オプション名, 'sub_key' => 配列内のキー名 ) の形なら、
+	 *                   get_option() で取得した配列の該当キーだけを書き換えて保存する
+	 *                   （VK Blocks Pro のように、複数設定をまとめて持つオプションのための書き込み方法）
+	 */
+	public static $license_key_fields = array(
+		'passport' => array(
+			'label'         => 'Vektor Passport ライセンスキー',
+			'field'         => 'license_key_vektor_passport',
+			'save_button'   => 'save_license_key_vektor_passport',
+			'api_param'     => 'passport_license_key',
+			'error_message' => 'Vektor Passport ライセンスキーが間違っています。',
+			'license_types' => array(
+				VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT,
+				VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE,
+			),
+			'purchase_url'  => PASSPORT_PURCHASE_URL,
+			// price_note は静的プロパティの初期値（PHP の制約で関数呼び出しを含められない）のため、
+			// URL は固定の定数文字列をそのまま埋め込んでいる（外部入力ではないため esc_url() は不要）
+			'price_note'    => '<span class="vkfsi_price_passport">※ 別途 <a href="https://vws.vektor-inc.co.jp/vektor-passport" target="_blank">Vektor Passport</a> が必要です</span>',
+			'kind'          => 'product',
+			'key_options'   => array(
+				'lightning-g3-pro-unit-license-key',
+				'vk_ab_testing_license_key',
+				'smaveksive-license-key',
+				array(
+					'option'  => 'vk_blocks_options',
+					'sub_key' => 'vk_blocks_pro_license_key',
+				),
+			),
+		),
+		'booking_manager_pro' => array(
+			'label'         => 'VK Booking Manager Pro ライセンスキー',
+			'field'         => 'license_key_booking_manager_pro',
+			'save_button'   => 'save_license_key_booking_manager_pro',
+			'api_param'     => 'product_license_key',
+			'error_message' => 'VK Booking Manager Pro ライセンスキーが間違っています。',
+			'license_types' => array(
+				VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO,
+				VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO_AND_SITE,
+			),
+			'purchase_url'  => BOOKING_MANAGER_PRO_PURCHASE_URL,
+			// price_note の URL 埋め込みについては passport 側の price_note のコメントを参照
+			'price_note'    => '<span class="vkfsi_price_passport">※ 別途 <a href="' . BOOKING_MANAGER_PRO_PURCHASE_URL . '" target="_blank">VK Booking Manager Pro</a> が必要です</span>',
+			'kind'          => 'product',
+			'key_options'   => array(
+				'vk-booking-manager-pro-license-key',
+			),
+		),
+		'site' => array(
+			'label'         => 'サイト ライセンスキー',
+			'field'         => 'license_key_site',
+			'save_button'   => 'save_license_key_site',
+			'api_param'     => 'site_license_key',
+			'error_message' => 'サイトライセンスキーが間違っています。',
+			'license_types' => array(
+				VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE,
+				VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE,
+				VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO_AND_SITE,
+			),
+			'purchase_url'  => null,
+			'price_note'    => '',
+			'kind'          => 'site',
+			'key_options'   => array(),
+		),
+	);
 
 	// 変更しないテーブルの配列
 	public static $skip_table_array = array(
@@ -454,26 +547,35 @@ class Installer {
 		// ZIP ファイル用のディレクトリを削除
 		self::removeDirectory( $import_dir );
 
-		// Vektor Passport ライセンスキーの保存
-		if ( ! empty( $_POST[ 'vkfsi_license_key_vektor_passport' ] ) ) {
-			$license_key_passport = sanitize_text_field( $_POST[ 'vkfsi_license_key_vektor_passport' ] );
-
-			// Lightning G3 Pro Unit のライセンスキーを保存
-			update_option( 'lightning-g3-pro-unit-license-key', $license_key_passport );
-
-			// VK AB Testing のライセンスキーを保存
-			update_option( 'vk_ab_testing_license_key', $license_key_passport );
-
-			// Smaveksive のライセンスキーを保存
-			update_option( 'smaveksive-license-key', $license_key_passport );
-
-			// VK Blocks Pro のライセンスキーを保存
-			$options = get_option( 'vk_blocks_options' );
-			if ( ! is_array( $options ) ) {
-				$options = array();
+		// 各製品のライセンスキーの保存
+		// 隠しフィールド名は import-form.php 側と同じ 'vkfsi_' . field の規則で導出する
+		// （既存の Vektor Passport 用フィールド名 vkfsi_license_key_vektor_passport はこの規則のまま維持している）
+		foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+			// インポート後に保存先を持たない区分（サイトライセンス等）はスキップ
+			if ( empty( $license_key_field[ 'key_options' ] ) ) {
+				continue;
 			}
-			$options[ 'vk_blocks_pro_license_key' ] = $license_key_passport;
-			update_option( 'vk_blocks_options', $options );
+
+			$hidden_field_name = 'vkfsi_' . $license_key_field[ 'field' ];
+			if ( empty( $_POST[ $hidden_field_name ] ) ) {
+				continue;
+			}
+			$license_key_value = sanitize_text_field( $_POST[ $hidden_field_name ] );
+
+			foreach ( $license_key_field[ 'key_options' ] as $key_option ) {
+				if ( is_array( $key_option ) ) {
+					// 配列の中の1要素として保存する製品（例: VK Blocks Pro）
+					$options = get_option( $key_option[ 'option' ] );
+					if ( ! is_array( $options ) ) {
+						$options = array();
+					}
+					$options[ $key_option[ 'sub_key' ] ] = $license_key_value;
+					update_option( $key_option[ 'option' ], $options );
+				} else {
+					// オプションへ直接保存する製品
+					update_option( $key_option, $license_key_value );
+				}
+			}
 		}
 
 		// サイトデータのカウントアップ
@@ -684,6 +786,15 @@ class Installer {
 
 		// API から sites.json を取得
 		$sites_api = apply_filters( 'vkfsi_sites_api_url', SITES_JSON_API_URL );
+
+		// 自分（この画面）が対応しているライセンス区分の一覧を送る
+		// 新しい区分のデモサイトが古いバージョンの画面に出てしまうのを防ぐため
+		$sites_api = add_query_arg(
+			'supported_license_types',
+			implode( ',', array_keys( self::$license_type_name_array ) ),
+			$sites_api
+		);
+
 		$response = wp_remote_get( $sites_api );
 		$sites_json = wp_remote_retrieve_body( $response );
 
@@ -700,10 +811,12 @@ class Installer {
 		// タイトル画像
 		$titleImage = self::getSvgImageTag( __DIR__ . '/assets/images/admin.svg', 'VK FullSite Installer 設定' );
 
-		// 入力されたライセンスキーを格納する変数
+		// 入力されたライセンスキーを格納する配列（キーは self::$license_key_fields のスロット名）
 		// ただし、認証が失敗した場合は空文字にセットする
-		$license_key_passport = '';
-		$license_key_site = '';
+		$license_keys = array();
+		foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+			$license_keys[ $slot ] = '';
+		}
 
 		// 処理対象のサイトコード
 		$site_code = '';
@@ -712,13 +825,23 @@ class Installer {
 		// 認証が通れば、認証サーバーが返してくる
 		$data_url = '';
 
-		// Vektor Passport ライセンスキーとサイトライセンスキー用のエラーフラグ
+		// 各ライセンスキー用のエラーフラグ（キーは self::$license_key_fields のスロット名）
 		// true なら入力値に問題があるので、エラーメッセージを表示する
-		$error_flag_passport = false;
-		$error_flag_site = false;
+		$error_flags = array();
+		foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+			$error_flags[ $slot ] = false;
+		}
 
-		// 「保存」ボタンが押されていれば、ライセンス認証を行う
-		if ( isset( $_POST[ 'save_license_key_vektor_passport' ] ) || isset( $_POST[ 'save_license_key_site' ] ) ) {
+		// いずれかの「保存」ボタンが押されていれば、ライセンス認証を行う
+		$save_button_pressed = false;
+		foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+			if ( isset( $_POST[ $license_key_field[ 'save_button' ] ] ) ) {
+				$save_button_pressed = true;
+				break;
+			}
+		}
+
+		if ( $save_button_pressed ) {
 
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_die( esc_html__( 'Sorry, you are not allowed to do this action.', 'default' ) );
@@ -730,18 +853,6 @@ class Installer {
 			// サイトコードの取得
 			$site_code = sanitize_text_field( $_POST[ 'vkfsi_code' ] );
 
-			// Vektor Passport ライセンスキーの取得
-			$license_key_passport = '';
-			if ( isset( $_POST[ 'license_key_vektor_passport' ] ) ) {
-				$license_key_passport = sanitize_text_field( $_POST[ 'license_key_vektor_passport' ] );
-			}
-
-			// サイトライセンスキーの取得
-			$license_key_site = '';
-			if ( isset( $_POST[ 'license_key_site' ] ) ) {
-				$license_key_site = sanitize_text_field( $_POST[ 'license_key_site' ] );
-			}
-
 			// ライセンス認証 URL
 			$license_check_url = apply_filters( 'vkfsi_license_check_url', LICENSE_CHECK_API_URL );
 
@@ -749,29 +860,42 @@ class Installer {
 			$license_checker = LicenseChecker::getInstance();
 			$license_checker->setApiUrl( $license_check_url );
 			$license_checker->setSiteCode( $site_code );
-			$license_checker->setPassportLicenseKey( $license_key_passport );
-			$license_checker->setSiteLicenseKey( $license_key_site );
+
+			// 各ライセンスキーの入力値を取得し、認証クラスへセットする
+			foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+				if ( isset( $_POST[ $license_key_field[ 'field' ] ] ) ) {
+					$license_keys[ $slot ] = sanitize_text_field( $_POST[ $license_key_field[ 'field' ] ] );
+				}
+				$license_checker->setLicenseKey( $license_key_field[ 'api_param' ], $license_keys[ $slot ] );
+			}
 
 			// 認証処理
 			$result = $license_checker->getData();
 
 			// 認証結果が返ってきた場合
 			if ( $result ) {
-				// 認証結果が失敗した場合
+				// 認証結果が失敗した場合、ライセンスキーはすべてクリアする
 				if ( 'fail' == $result[ 'status' ] ) {
-					// ライセンスキーは２つともクリアする
-					$license_key_passport = '';
-					$license_key_site = '';
+					foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+						$license_keys[ $slot ] = '';
+					}
 
-				// サイトライセンスキーだけ認証成功の場合
+				// サイトライセンスキーだけ認証成功の場合、製品ライセンスキーをクリアする
 				} else if ( 'success_site' == $result[ 'status' ] ) {
-					// Vektor Passport ライセンスキーはクリアする
-					$license_key_passport = '';
+					foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+						if ( 'product' === $license_key_field[ 'kind' ] ) {
+							$license_keys[ $slot ] = '';
+						}
+					}
 
-				// Vektor Passport ライセンスキーだけ認証成功の場合
-				} else if ( 'success_passport' == $result[ 'status' ] ) {
-					// サイトライセンスキーはクリアする
-					$license_key_site = '';
+				// 製品ライセンスキー（Vektor Passport または VK Booking Manager Pro 等）だけ
+				// 認証成功の場合、サイトライセンスキーをクリアする
+				} else if ( in_array( $result[ 'status' ], array( 'success_passport', 'success_product' ), true ) ) {
+					foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+						if ( 'site' === $license_key_field[ 'kind' ] ) {
+							$license_keys[ $slot ] = '';
+						}
+					}
 				}
 
 				// データダウンロード URL
@@ -780,26 +904,21 @@ class Installer {
 
 			// 認証結果が返ってこない場合
 			} else {
-				// 入力値はクリアする
-				$license_key_passport = '';
-				$license_key_site = '';
+				// 入力値はすべてクリアする
+				foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+					$license_keys[ $slot ] = '';
+				}
 				$data_url = '';
 			}
 		}
 
-		// Vektor Passport ライセンスキーが認証エラーで空文字にされた場合
+		// ライセンスキーが認証エラーで空文字にされた場合
 		// メッセージ通知用にエラーフラグを立てる
-		if ( isset( $_POST[ 'license_key_vektor_passport' ] ) && ! empty( $_POST[ 'license_key_vektor_passport' ] ) ) {
-			if ( '' == $license_key_passport ) {
-				$error_flag_passport = true;
-			}
-		}
-
-		// サイトライセンスキーが認証エラーで空文字にされた場合
-		// メッセージ通知用にエラーフラグを立てる
-		if ( isset( $_POST[ 'license_key_site' ]) && ! empty( $_POST[ 'license_key_site' ] ) ) {
-			if ( '' == $license_key_site ) {
-				$error_flag_site = true;
+		foreach ( self::$license_key_fields as $slot => $license_key_field ) {
+			if ( isset( $_POST[ $license_key_field[ 'field' ] ] ) && ! empty( $_POST[ $license_key_field[ 'field' ] ] ) ) {
+				if ( '' == $license_keys[ $slot ] ) {
+					$error_flags[ $slot ] = true;
+				}
 			}
 		}
 
