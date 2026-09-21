@@ -78,7 +78,10 @@ class Installer {
 	 *                   一覧を返す形に変更してから行うこと。変更せずに追加すると、
 	 *                   displaySiteListPage() 側は「どちらが通ったか判断できない」として
 	 *                   該当する製品キーをまとめてクリアする（フェイルクローズ）ため、
-	 *                   認証が通ったはずのキーまで毎回消える不具合になる
+	 *                   認証が通ったはずのキーまで毎回消える不具合になる。
+	 *                   また、このフェイルクローズは error_message（例:「◯◯ライセンスキーが間違っています。」）
+	 *                   をそのまま流用して表示するため、認証が通ったキーにも「入力が誤り」の文言が出てしまう。
+	 *                   API 側の変更に着手する際は、この error_message の流用も先に見直すこと
 	 * - key_options   : インポート後にライセンスキーを保存するオプション名の一覧。
 	 *                   文字列ならそのオプションへ直接 update_option() する。
 	 *                   array( 'option' => オプション名, 'sub_key' => 配列内のキー名 ) の形なら、
@@ -603,7 +606,7 @@ class Installer {
 		}
 
 		// サイトデータのカウントアップ
-		$site_code = $_POST[ 'vkfsi_code' ];
+		$site_code = isset( $_POST[ 'vkfsi_code' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'vkfsi_code' ] ) ) : '';
 		$api_url = add_query_arg( 'code', $site_code, apply_filters( 'vkfsi_sites_counter_api_url', SITES_COUNTER_API_URL ) );
 		$response = wp_remote_get( $api_url );
 
@@ -842,18 +845,26 @@ class Installer {
 
 		// JSON デコード
 		// json_last_error() は構文エラーしか見ないため、API が null や 123 のような
-		// 有効なスカラー JSON を返した場合は $sites が配列にならない。
-		// この後 findLicenseTypeBySiteCode() や site-list.php で foreach ( $sites as $site ) するため、
-		// ここで配列かどうかもあわせて確認しておく（is_array を関数側だけに置くと、
-		// 同じ $sites を受け取る他の箇所を守れない）
+		// 有効なスカラー JSON を返した場合は $sites が配列にならない
 		$sites = json_decode( $sites_json, true );
-		if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $sites ) ) {
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			echo '<div class="notice notice-error is-dismissible"><p>sites.json ファイルの読み込みに失敗しました。</p></div>';
 			return;
 		}
 
 		// sites.json ファイルの内容をフィルタリング
 		$sites = apply_filters( 'vkfsi_sites', $sites );
+
+		// 配列かどうかの確認は、フィルタ適用の直後（ここ）で行う。
+		// デコード直後で確認しても、その後の apply_filters( 'vkfsi_sites', ... ) が
+		// 配列以外を返す経路までは塞げないため、フィルタが配列以外を返す場合も含めて
+		// この1か所で確認している。この後 findLicenseTypeBySiteCode() や site-list.php で
+		// foreach ( $sites as $site ) するため、$sites を使う直前のこの位置で確認することで、
+		// デコード直後・フィルタ後のどちらの経路も、この1か所で確実に守れる
+		if ( ! is_array( $sites ) ) {
+			echo '<div class="notice notice-error is-dismissible"><p>sites.json ファイルの読み込みに失敗しました。</p></div>';
+			return;
+		}
 
 		// タイトル画像
 		$titleImage = self::getSvgImageTag( __DIR__ . '/assets/images/admin.svg', 'VK FullSite Installer 設定' );
@@ -915,7 +926,7 @@ class Installer {
 			// この場合は入力したキーがすべて意味を持たないため、認証 API を呼ばずに通知だけ出す。
 			// return はせず、後続の一覧表示は行う（利用者が別のサイトを選び直せるようにするため）
 			if ( '' === $selected_license_type ) {
-				echo '<div class="notice notice-error is-dismissible"><p>対象のデモサイトが見つかりませんでした。画面を再読み込みしてやり直してください。</p></div>';
+				echo '<div class="notice notice-error is-dismissible"><p>対象のデモサイトが見つかりませんでした。下の一覧から選び直してください。</p></div>';
 			} else {
 
 				// ライセンス認証 URL

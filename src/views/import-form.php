@@ -56,8 +56,8 @@ echo '</style>';
 	<h2>インポート設定</h2>
 	<form method="post" action="">
 		<?php wp_nonce_field( 'vkfsi_start_import', 'vkfsi_import_nonce' ); ?>
-		<input type="hidden" name="vkfsi_code" value="<?php echo esc_attr( isset( $_POST[ 'vkfsi_code' ] ) ? wp_unslash( $_POST[ 'vkfsi_code' ] ) : '' ); ?>">
-		<input type="hidden" name="vkfsi_data_url" value="<?php echo esc_url( isset( $_POST[ 'vkfsi_data_url' ] ) ? wp_unslash( $_POST[ 'vkfsi_data_url' ] ) : '' ); ?>">
+		<input type="hidden" name="vkfsi_code" value="<?php echo esc_attr( isset( $_POST[ 'vkfsi_code' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'vkfsi_code' ] ) ) : '' ); ?>">
+		<input type="hidden" name="vkfsi_data_url" value="<?php echo esc_url( isset( $_POST[ 'vkfsi_data_url' ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'vkfsi_data_url' ] ) ) : '' ); ?>">
 		<?php
 		// 各製品のライセンスキーを、次のインポート処理（Installer::importSite()）へ引き継ぐための隠しフィールド。
 		// self::$license_key_fields のうち、インポート後に保存先（key_options）を持つ区分のみ引き継ぐ
