@@ -51,7 +51,13 @@ class LicenseChecker {
 
 	/**
 	 * ライセンスキーをセット
-	 * @param string $api_param : ライセンス認証 API へ送るクエリパラメータ名
+	 *
+	 * $api_param は製品ごとに一意にすること。同じ $api_param で複数回呼ぶと、
+	 * 後から積んだ値で以前の値が黙って上書きされる（エラーにはならない）。
+	 * また 'site_code' は getData() が site_code の送信に使う予約済みのキー名のため、
+	 * $api_param に 'site_code' は使えない（使っても getData() 側で site_code の値に上書きされる）。
+	 *
+	 * @param string $api_param : ライセンス認証 API へ送るクエリパラメータ名（'site_code' は使用不可）
 	 * @param string $value     : ライセンスキーの値
 	 * @return void
 	 */
@@ -61,15 +67,17 @@ class LicenseChecker {
 
 	/**
 	 * ライセンス認証状況を UpdateChecker に問い合わせ
-	 * @return string
+	 * @return array|null 認証結果の連想配列。リクエスト失敗時や不正なレスポンス時は null
 	 */
 	public function getData() {
 
 		$this->api_url = apply_filters( 'vkfsibt_license_check_url', $this->api_url );
+		// license_keys → site_code の順で merge し、api_param に 'site_code' が使われていても
+		// site_code の値が必ず勝つようにする（後の配列の値で上書きされる array_merge の仕様を利用）
 		$api_url = add_query_arg(
 			array_merge(
-				[ 'site_code' => $this->site_code ],
-				$this->license_keys
+				$this->license_keys,
+				[ 'site_code' => $this->site_code ]
 			),
 			$this->api_url
 		);

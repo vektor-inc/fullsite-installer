@@ -70,7 +70,7 @@ echo '</style>';
 				continue;
 			}
 			$license_key_value = isset( $_POST[ $license_key_field[ 'field' ] ] )
-				? sanitize_text_field( $_POST[ $license_key_field[ 'field' ] ] )
+				? sanitize_text_field( wp_unslash( $_POST[ $license_key_field[ 'field' ] ] ) )
 				: '';
 			$hidden_field_name = 'vkfsi_' . $license_key_field[ 'field' ];
 			echo '<input type="hidden" name="' . esc_attr( $hidden_field_name ) . '" value="' . esc_attr( $license_key_value ) . '">';

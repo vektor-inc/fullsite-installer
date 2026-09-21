@@ -560,7 +560,10 @@ foreach ( $filtered_sites as $site ) {
 			continue;
 		}
 		if ( in_array( $site[ 'license_type' ], $license_key_field[ 'license_types' ], true ) ) {
-			$price_html .= $license_key_field[ 'price_note' ];
+			// price_note は定義配列側の固定文字列だが、$license_key_fields は他の
+			// プラグイン・テーマからも書き換えられうる static プロパティのため、
+			// 出力時にも wp_kses_post() を通して任意 HTML の出口にならないようにする
+			$price_html .= wp_kses_post( $license_key_field[ 'price_note' ] );
 		}
 	}
 	$price_html .= '</div>'; // vkfsi_price-outer
@@ -631,16 +634,23 @@ foreach ( $filtered_sites as $site ) {
 		// 保存ボタンを押したサイトコードと同じ場合のみ、入力値・エラーを表示する
 		$is_current_site = ( $site_code === $site[ 'site_code' ] );
 		$input_value      = $is_current_site ? $license_keys[ $slot ] : '';
+		$has_error        = $is_current_site && ! empty( $error_flags[ $slot ] );
 
-		echo '<label for="' . esc_attr( $license_key_field[ 'field' ] ) . '">' . esc_html( $license_key_field[ 'label' ] ) . '</label>';
+		// この画面はデモサイトごとにカードが繰り返されるため、id / for はサイトコードを含めて一意にする
+		$field_id = $license_key_field[ 'field' ] . '-' . $site[ 'site_code' ];
+		$error_id = $field_id . '-error';
+
+		echo '<label for="' . esc_attr( $field_id ) . '">' . esc_html( $license_key_field[ 'label' ] ) . '</label>';
 		echo '<div class="vkfsi_license-form">';
 
 		// エラーメッセージを表示
-		if ( $is_current_site && ! empty( $error_flags[ $slot ] ) ) {
-			echo '<div class="vkfsi_error">' . esc_html( $license_key_field[ 'error_message' ] ) . '</div>';
+		if ( $has_error ) {
+			echo '<div class="vkfsi_error" id="' . esc_attr( $error_id ) . '">' . esc_html( $license_key_field[ 'error_message' ] ) . '</div>';
 		}
 
-		echo '<input type="password" name="' . esc_attr( $license_key_field[ 'field' ] ) . '" value="' . esc_attr( $input_value ) . '">';
+		// エラーが出ているときだけ aria-describedby で入力欄とエラーメッセージを関連付ける
+		$aria_describedby = $has_error ? ' aria-describedby="' . esc_attr( $error_id ) . '"' : '';
+		echo '<input type="password" id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $license_key_field[ 'field' ] ) . '" value="' . esc_attr( $input_value ) . '"' . $aria_describedby . '>';
 		submit_button( '保存', 'primary', $license_key_field[ 'save_button' ] );
 
 		// 購入ボタン。purchase_url が無ければデモサイトごとの購入リンクを使う
