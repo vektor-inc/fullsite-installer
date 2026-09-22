@@ -348,23 +348,27 @@ echo '</fieldset>';
 echo '</div>';
 
 // 検索フォーム - Author
-echo '<div class="vkfsi_search-item">';
-echo '<fieldset>';
-echo '<legend>Author</legend>';
-echo '<ul class="vkfsi_input-wrap">';
-foreach ( $search_author_array as $author ) {
-	$checked = '';
-	if ( in_array( $author, $s_author ) ) {
-		$checked = 'checked';
+// Author 検索は一旦非表示（issue #14）。再表示する場合は下記 $show_author_search を true にする。
+$show_author_search = false;
+if ( $show_author_search ) {
+	echo '<div class="vkfsi_search-item">';
+	echo '<fieldset>';
+	echo '<legend>Author</legend>';
+	echo '<ul class="vkfsi_input-wrap">';
+	foreach ( $search_author_array as $author ) {
+		$checked = '';
+		if ( in_array( $author, $s_author ) ) {
+			$checked = 'checked';
+		}
+		echo '<li><label>';
+		echo '<input type="checkbox" name="s-author[]" value="' . esc_attr( $author ) . '" ' . $checked . '>';
+		echo esc_html( $author );
+		echo '</label></li>';
 	}
-	echo '<li><label>';
-	echo '<input type="checkbox" name="s-author[]" value="' . esc_attr( $author ) . '" ' . $checked . '>';
-	echo esc_html( $author );
-	echo '</label></li>';
+	echo '</ul>';
+	echo '</fieldset>';
+	echo '</div>';
 }
-echo '</ul>';
-echo '</fieldset>';
-echo '</div>';
 
 // 検索フォーム - キーワード
 echo '<div class="vkfsi_search-item">';
