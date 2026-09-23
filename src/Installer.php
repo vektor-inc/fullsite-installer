@@ -26,8 +26,8 @@ define( 'BOOKING_MANAGER_PRO_PURCHASE_URL', 'https://vws.vektor-inc.co.jp/produc
 
 // sites.json の license_type の種類
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE', 'free' );
-define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT', 'passport' );
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE', 'site' );
+define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT', 'passport' );
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE', 'passport_and_site' );
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO', 'booking_manager_pro' );
 define( 'VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO_AND_SITE', 'booking_manager_pro_and_site' );
@@ -47,8 +47,8 @@ class Installer {
 	 */
 	public static $license_type_name_array = [
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_FREE => '無料',
-		VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT => 'Vektor Passport',
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_SITE => 'サイトライセンス',
+		VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT => 'Vektor Passport',
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_PASSPORT_AND_SITE => 'Vektor Passport + サイトライセンス',
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO => 'VK Booking Manager Pro',
 		VK_FULLSITE_INSTALLER_LICENSE_TYPE_BOOKING_MANAGER_PRO_AND_SITE => 'VK Booking Manager Pro + サイトライセンス',
