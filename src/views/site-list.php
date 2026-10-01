@@ -45,6 +45,34 @@ $sort_key_array = [
 ];
 
 /**
+ * サイトの業種を配列で取得する
+ * サイト一覧 API の industries（全業種名の配列）が空でなければそれを使い、
+ * 無い・空のときは industry（1件の文字列）を使う。
+ * 空文字・文字列以外の要素は除き、重複を除いた配列を返す。
+ * @param array $site サイト情報
+ * @return string[] 業種名の配列（業種が無い場合は空配列）
+ */
+function vkfsi_get_site_industries( $site ) {
+	// industries が空でない配列ならそれを、無い・空なら industry（文字列）を要素1つの配列にする。
+	if ( ! empty( $site[ 'industries' ] ) && is_array( $site[ 'industries' ] ) ) {
+		$industries = $site[ 'industries' ];
+	} elseif ( isset( $site[ 'industry' ] ) ) {
+		$industries = array( $site[ 'industry' ] );
+	} else {
+		return array();
+	}
+
+	// 文字列以外と空文字を除き、重複を削除して添字を振り直す。
+	$result = array();
+	foreach ( $industries as $industry ) {
+		if ( is_string( $industry ) && '' !== $industry ) {
+			$result[] = $industry;
+		}
+	}
+	return array_values( array_unique( $result ) );
+}
+
+/**
  * サイト一覧の表示フィルタリング（検索条件の適用）
  * @param array $site サイト情報
  * @return bool true: 検索条件にマッチする、false: 検索条件にマッチしない
@@ -96,11 +124,12 @@ function vkfsi_search_filter( $site ) {
 	if ( isset( $_POST[ 's-industry' ] ) && ! empty( $_POST[ 's-industry' ] ) ) {
 		global $s_industry;
 		if ( '__unset__' === $s_industry ) {
-			// 「業種未設定」選択時は industry が空のサイトのみ通す。
-			if ( ! empty( $site[ 'industry' ] ?? '' ) ) {
+			// 「業種未設定」選択時は業種が1件も無いサイトのみ通す。
+			if ( ! empty( vkfsi_get_site_industries( $site ) ) ) {
 				return false;
 			}
-		} elseif ( ( $site[ 'industry' ] ?? '' ) !== $s_industry ) {
+		} elseif ( ! in_array( $s_industry, vkfsi_get_site_industries( $site ), true ) ) {
+			// 選んだ業種をいずれにも持たないサイトは除く。
 			return false;
 		}
 	}
@@ -230,10 +259,13 @@ foreach ( $sites as $site ) {
 	$search_theme_type_array[] = $site[ 'theme_type' ];
 	$search_license_type_array[] = $site[ 'license_type' ];
 	$search_author_array[] = $site[ 'author' ];
-	if ( isset( $site[ 'industry' ] ) && ! empty( $site[ 'industry' ] ) ) {
-		$search_industry_array[] = $site[ 'industry' ];
-	} else {
+	// 業種を1件ずつ展開して選択肢に加える。業種が1件も無いサイトは未設定として扱う。
+	$site_industries = vkfsi_get_site_industries( $site );
+	if ( empty( $site_industries ) ) {
 		$has_unset_industry = true;
+	}
+	foreach ( $site_industries as $site_industry ) {
+		$search_industry_array[] = $site_industry;
 	}
 }
 
@@ -312,9 +344,6 @@ if ( count( $search_industry_array ) > 0 ) {
 		echo '<option value="__unset__" ' . $selected . '>未設定</option>';
 	}
 	foreach ( $search_industry_array as $industry ) {
-		if ( empty( $industry ) ) {
-			continue;
-		}
 		$selected = '';
 		if ( isset( $s_industry ) && $industry === $s_industry ) {
 			$selected = 'selected';
@@ -548,7 +577,11 @@ foreach ( $filtered_sites as $site ) {
 
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">テーマタイプ</span></dt><dd>' . esc_html( $site[ 'theme_type' ] ). '</dd></dl>';
 
-	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( ( $site['industry'] ?? '' ) ?: '未設定' ) . '</dd></dl>';
+	// 業種は業種セレクトと同じ並び順で「, 」区切りにする（業種名に「・」を含むため「・」は使わない）。
+	$site_industries = vkfsi_get_site_industries( $site );
+	sort( $site_industries );
+	$site_industry_text = empty( $site_industries ) ? '未設定' : implode( ', ', $site_industries );
+	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">業種</span></dt><dd>' . esc_html( $site_industry_text ) . '</dd></dl>';
 
 	// Author の表示
 	echo '<dl class="vkfsi_table"><dt><span class="vkfsi_table_label">Author</span></dt><dd>' . esc_html( $site[ 'author' ] ) . '</dd></dl>';
