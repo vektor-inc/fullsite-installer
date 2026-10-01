@@ -46,14 +46,15 @@ $sort_key_array = [
 
 /**
  * サイトの業種を配列で取得する
- * サイト一覧 API の industries（全業種名の配列）を優先し、無ければ industry（1件の文字列）を使う。
+ * サイト一覧 API の industries（全業種名の配列）が空でなければそれを使い、
+ * 無い・空のときは industry（1件の文字列）を使う。
  * 空文字・文字列以外の要素は除き、重複を除いた配列を返す。
  * @param array $site サイト情報
  * @return string[] 業種名の配列（業種が無い場合は空配列）
  */
 function vkfsi_get_site_industries( $site ) {
-	// industries（配列）があればそれを、無ければ industry（文字列）を要素1つの配列にする。
-	if ( isset( $site[ 'industries' ] ) && is_array( $site[ 'industries' ] ) ) {
+	// industries が空でない配列ならそれを、無い・空なら industry（文字列）を要素1つの配列にする。
+	if ( ! empty( $site[ 'industries' ] ) && is_array( $site[ 'industries' ] ) ) {
 		$industries = $site[ 'industries' ];
 	} elseif ( isset( $site[ 'industry' ] ) ) {
 		$industries = array( $site[ 'industry' ] );
@@ -343,9 +344,6 @@ if ( count( $search_industry_array ) > 0 ) {
 		echo '<option value="__unset__" ' . $selected . '>未設定</option>';
 	}
 	foreach ( $search_industry_array as $industry ) {
-		if ( empty( $industry ) ) {
-			continue;
-		}
 		$selected = '';
 		if ( isset( $s_industry ) && $industry === $s_industry ) {
 			$selected = 'selected';
