@@ -211,6 +211,7 @@ body.settings_page_vk-fullsite-installer {
         height: auto;
         aspect-ratio: 4 / 3; /* 4:3の比率を指定 */
         object-fit: cover; /* 画像をクリップして比率に収める */
+        object-position: top; /* 縦長画像でも上端から表示する */
         transition: opacity 0.2s ease-in-out; /* スムーズな遷移のためのトランジション */
 		a &{
             border: 1px solid var(--vk-color-border-gray);
